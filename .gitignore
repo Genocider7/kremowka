@@ -1,3 +1,5 @@
 .env
 **.jpg
 **.png
+**.log
+**.dict
