@@ -1,6 +1,7 @@
-import discord, mysql.connector, requests, validators
 from warnings import filterwarnings
 filterwarnings('ignore') #pytz raises a very irritating warning because of apscheduler
+
+import discord, mysql.connector, requests, validators, logging
 from dotenv import dotenv_values
 from datetime import datetime
 from random import choice
@@ -13,6 +14,20 @@ intents.guilds = True
 client = discord.Client(intents=intents)
 pope_embed = None
 channels = {}
+logger = None
+
+def set_logger():
+    global logger
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    handler = logging.FileHandler(config['log_file'], 'a', 'utf8')
+    formatter = logging.Formatter(fmt = '%(levelname)s :: %(asctime)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+def log(message):
+    logger.info(message)
+    print(message)
 
 def connect_db():
     global db_handler
@@ -24,7 +39,7 @@ def connect_db():
         database=config['database']
     )
     db_cursor = db_handler.cursor()
-    print('Connected to mysql database!')
+    log('Connected to mysql database!')
 
 def get_channels_from_db():
     global channels
@@ -64,7 +79,7 @@ def get_image_embed(image):
     (url, author) = image
     pope_embed = discord.Embed()
     pope_embed.set_image(url=url)
-    pope_embed.set_footer(text='Submitted by ' + author)
+    pope_embed.set_footer(text=dictionary['embed_footer'].format(author_name=author))
 
 async def prepare_embed():
     image = get_random_image()
@@ -100,15 +115,14 @@ async def receive_file(url, author_name, author_id, where_to_send):
     db_cursor.execute('SELECT images.id AS id FROM images WHERE images.basename=\"' + basename + '\" ORDER BY images.id DESC LIMIT 1')
     result = db_cursor.fetchone()
     id = result[0]
-    await where_to_send.send('Dziękuję za wysłanie mema. Mem czeka na weryfikację. ID mema: ' + str(id)) #TODO do something with that id (checking status for example)
+    await where_to_send.send(dictionary['meme_sent'].format(meme_id=id)) #TODO do something with that id (checking status for example)
 
 @client.event
 async def on_ready():
     get_channels_from_db()
-    print('Connected to discord servers!')
-    print(datetime.now())
-    print('logged in as ' + client.user.name)
-    print('id ' + str(client.user.id))
+    log('Connected to discord servers!')
+    log('logged in as ' + client.user.name)
+    log('id ' + str(client.user.id))
     scheduler = AsyncIOScheduler(timezone="Europe/Warsaw")
     scheduler.add_job(prepare_embed, CronTrigger(hour=21, minute=30, second=0))
     scheduler.add_job(send_pope_memes, CronTrigger(hour=21, minute=37, second=0))
@@ -118,21 +132,21 @@ async def on_ready():
 async def on_message(message):
     if type(message.channel) == discord.DMChannel and len(message.attachments) > 0: # TODO disable receiving memes 21:30-21:40
         if len(message.attachments) > 1:
-            await message.channel.send('Proszę wysyłaj memy pojedyńczo (limit 1 na 10 minut)') #TODO make a real limit
+            await message.channel.send(dictionary['seperate_memes_warning']) #TODO make a real time limit between memes
             return
         if message.content != "":
-            await message.channel.send('Proszę wysyłaj memy bez żadnej wiadomości (sam mem)')
+            await message.channel.send(dictionary['no_message_warning'])
             return
         meme = message.attachments[0]
         if not meme.filename.endswith('.jpg') and not meme.filename.endswith('.png'):
-            await message.channel.send('Memy mogą być tylko z rozszerzeniem jpg lub png')
+            await message.channel.send(dictionary['wrong_extension_warning'])
             return
         await receive_file(meme.url, message.author.display_name, message.author.id, message.channel)
         return
 
     if type(message.channel) == discord.DMChannel and validators.url(message.content):
         if not message.content.endswith('.jpg') and not message.content.endswith('.png'):
-            await message.channel.send('Memy mogą być tylko z rozszerzeniem jpg lub png')
+            await message.channel.send(dictionary['wrong_extension_warning'])
             return
         await receive_file(message.content, message.author.display_name, message.author.id, message.channel)
         return
@@ -146,23 +160,23 @@ async def on_message(message):
             if message.guild.owner_id == message.author.id:
                 words = content.split(' ', 1)
                 if len(words) <= 1:
-                    await message.channel.send('Nieprawidłowe użycie. Użyj ' + config['prefix'] + 'config <channel> żeby skonfigurować kanał.')
+                    await message.channel.send(dictionary['wrong_config'].format(prefix=config['prefix']))
                     return
                 channel_id = check_for_channel_id(words[1])
                 if channel_id == False:
-                    await message.channel.send('Nieprawidłowy kanał. Użyj formy "#channelName" żeby otagować kanał.')
+                    await message.channel.send(dictionary['no_channel_found'])
                     return
                 success = configure_channel(channel_id, message.guild.id)
                 if not success:
-                    await message.channel.send('Wystąpił błąd podczas ustawiania kanału')
+                    await message.channel.send(dictionary['configure_channel_error'])
                     return
-                await message.channel.send('Kanał został ustawiony.')
+                await message.channel.send(dictionary['configure_channel_success'])
                 return
             else:
-                await message.channel.send('Tylko właściciel serwera może użyć tej komendy.')
+                await message.channel.send(dictionary['no_permission_config'])
                 return
         else:
-            await message.channel.send('Tej komendy można używać tylko na serwerach w kanałach tekstowych.')
+            await message.channel.send(dictionary['DM_config'])
 
     # only for admin
     if message.author.id == config['admin_id']:
@@ -177,8 +191,11 @@ async def on_message(message):
 
 def main():
     global config
+    global dictionary
     config = dotenv_values('.env')
     config['admin_id'] = int(config['admin_id'])
+    dictionary = dotenv_values(config['dictionary'])
+    set_logger()
     connect_db()
     client.run(config['token'])
 
