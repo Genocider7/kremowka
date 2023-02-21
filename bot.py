@@ -19,14 +19,14 @@ logger = None
 def set_logger():
     global logger
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.OUTPUT)
     handler = logging.FileHandler(config['log_file'], 'a', 'utf8')
     formatter = logging.Formatter(fmt = '%(levelname)s :: %(asctime)s - %(message)s')
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
 def log(message):
-    logger.info(message)
+    logger.log(msg = message, level = logger.level)
     print(message)
 
 def connect_db():
@@ -89,6 +89,14 @@ async def send_pope_memes():
     for channel in channels.values():
         await channel.send(embed=pope_embed)
 
+async def stop_receiving_memes():
+    global memes_ok 
+    memes_ok = False
+
+async def start_receiving_memes():
+    global memes_ok 
+    memes_ok = True
+
 def configure_channel(channel_id, server_id):
     global channels
     channel_id = str(channel_id)
@@ -124,13 +132,18 @@ async def on_ready():
     log('logged in as ' + client.user.name)
     log('id ' + str(client.user.id))
     scheduler = AsyncIOScheduler(timezone="Europe/Warsaw")
+    scheduler.add_job(stop_receiving_memes, CronTrigger(hour=21, minute=35, second=0))
+    scheduler.add_job(start_receiving_memes, CronTrigger(hour=21, minute=40, second=0))
     scheduler.add_job(prepare_embed, CronTrigger(hour=21, minute=30, second=0))
     scheduler.add_job(send_pope_memes, CronTrigger(hour=21, minute=37, second=0))
     scheduler.start()
 
 @client.event
 async def on_message(message):
-    if type(message.channel) == discord.DMChannel and len(message.attachments) > 0: # TODO disable receiving memes 21:30-21:40
+    if type(message.channel) == discord.DMChannel and len(message.attachments) > 0:
+        if not memes_ok:
+            await message.channel.send(dictionary['wrong_time_for_memes'])
+            return
         if len(message.attachments) > 1:
             await message.channel.send(dictionary['seperate_memes_warning']) #TODO make a real time limit between memes
             return
@@ -192,9 +205,13 @@ async def on_message(message):
 def main():
     global config
     global dictionary
+    global memes_ok
     config = dotenv_values('.env')
     config['admin_id'] = int(config['admin_id'])
     dictionary = dotenv_values(config['dictionary'])
+    memes_ok = True
+    logging.addLevelName(5, 'OUTPUT')
+    logging.OUTPUT = 5
     set_logger()
     connect_db()
     client.run(config['token'])
