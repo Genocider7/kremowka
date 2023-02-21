@@ -1,0 +1,18 @@
+table
+{
+    border-style: solid;
+    border-radius: 3px;
+    border-color: black;
+}
+
+td
+{
+    border-style: solid;
+    border-radius: 1px;
+    border-color: black;
+}
+
+.Value-TextArea
+{
+    width: 650px;
+}

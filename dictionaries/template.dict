@@ -1,0 +1,12 @@
+embed_footer=Submitted by {author_name}
+meme_sent=Meme has been sent. Meme id: {meme_id}.
+seperate_memes_warning=Error, multiple memes sent.
+no_message_warning=Error, message text has to be empty.
+wrong_extension_warning=Wrong extension. jpg and png only.
+wrong_config=Incorrect usage. Use {prefix}config <channel>.
+no_channel_found=No channel found.
+configure_channel_error=Erorr occured configuring channel.
+configure_channel_success=Channel has been set.
+no_permission_config=No permissions.
+DM_config=Only usable on servers.
+wrong_time_for_memes=Maintanence.
