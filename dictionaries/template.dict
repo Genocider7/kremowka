@@ -10,3 +10,4 @@ configure_channel_success=Channel has been set.
 no_permission_config=No permissions.
 DM_config=Only usable on servers.
 wrong_time_for_memes=Maintanence.
+wait_for_downtime=Please wait before posting memes (1 meme per 10 minutes)

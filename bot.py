@@ -3,8 +3,9 @@ filterwarnings('ignore') #pytz raises a very irritating warning because of apsch
 
 import discord, mysql.connector, requests, validators, logging
 from dotenv import dotenv_values
-from datetime import datetime
+from datetime import datetime, timedelta
 from random import choice
+from pytz import timezone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from hashlib import md5
@@ -124,28 +125,45 @@ async def receive_file(url, author_name, author_id, where_to_send):
     result = db_cursor.fetchone()
     id = result[0]
     await where_to_send.send(dictionary['meme_sent'].format(meme_id=id)) #TODO do something with that id (checking status for example)
+    add_user_timeout(author_id)
 
 @client.event
 async def on_ready():
+    global Mainscheduler
+    global timeout_users
+    timeout_users = []
     get_channels_from_db()
     log('Connected to discord servers!')
     log('logged in as ' + client.user.name)
     log('id ' + str(client.user.id))
-    scheduler = AsyncIOScheduler(timezone="Europe/Warsaw")
-    scheduler.add_job(stop_receiving_memes, CronTrigger(hour=21, minute=35, second=0))
-    scheduler.add_job(start_receiving_memes, CronTrigger(hour=21, minute=40, second=0))
-    scheduler.add_job(prepare_embed, CronTrigger(hour=21, minute=30, second=0))
-    scheduler.add_job(send_pope_memes, CronTrigger(hour=21, minute=37, second=0))
-    scheduler.start()
+    Mainscheduler = AsyncIOScheduler(timezone='Europe/Warsaw')
+    Mainscheduler.add_job(stop_receiving_memes, CronTrigger(hour=21, minute=35, second=0))
+    Mainscheduler.add_job(start_receiving_memes, CronTrigger(hour=21, minute=40, second=0))
+    Mainscheduler.add_job(prepare_embed, CronTrigger(hour=21, minute=30, second=0))
+    Mainscheduler.add_job(send_pope_memes, CronTrigger(hour=21, minute=37, second=0))
+    Mainscheduler.start()
+
+def add_user_timeout(user_id):
+    global timeout_users
+    global Mainscheduler
+    timeout_users.append(user_id)
+    Mainscheduler.add_job(remove_user_timeout, 'date', run_date=datetime.now(tz=timezone('Europe/Warsaw')) + timedelta(minutes=10), args=[user_id])
+
+def remove_user_timeout(user_id):
+    global timeout_users
+    timeout_users.remove(user_id)
 
 @client.event
 async def on_message(message):
     if type(message.channel) == discord.DMChannel and len(message.attachments) > 0:
+        if message.author.id in timeout_users:
+            await message.channel.send(dictionary['wait_for_downtime'])
+            return
         if not memes_ok:
             await message.channel.send(dictionary['wrong_time_for_memes'])
             return
         if len(message.attachments) > 1:
-            await message.channel.send(dictionary['seperate_memes_warning']) #TODO make a real time limit between memes
+            await message.channel.send(dictionary['seperate_memes_warning'])
             return
         if message.content != "":
             await message.channel.send(dictionary['no_message_warning'])
@@ -158,6 +176,9 @@ async def on_message(message):
         return
 
     if type(message.channel) == discord.DMChannel and validators.url(message.content):
+        if message.author.id in timeout_users:
+            await message.channel.send(dictionary['wait_for_downtime'])
+            return
         if not message.content.endswith('.jpg') and not message.content.endswith('.png'):
             await message.channel.send(dictionary['wrong_extension_warning'])
             return
