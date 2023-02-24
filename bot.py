@@ -124,7 +124,7 @@ async def receive_file(url, author_name, author_id, where_to_send):
     db_cursor.execute('SELECT images.id AS id FROM images WHERE images.basename=\"' + basename + '\" ORDER BY images.id DESC LIMIT 1')
     result = db_cursor.fetchone()
     id = result[0]
-    await where_to_send.send(dictionary['meme_sent'].format(meme_id=id)) #TODO do something with that id (checking status for example)
+    await where_to_send.send(dictionary['meme_sent'].format(meme_id=id))
     add_user_timeout(author_id)
 
 @client.event
@@ -155,6 +155,7 @@ def remove_user_timeout(user_id):
 
 @client.event
 async def on_message(message):
+    #TODO add help command 
     if type(message.channel) == discord.DMChannel and len(message.attachments) > 0:
         if message.author.id in timeout_users:
             await message.channel.send(dictionary['wait_for_downtime'])
@@ -211,6 +212,24 @@ async def on_message(message):
                 return
         else:
             await message.channel.send(dictionary['DM_config'])
+            return
+
+    if content.lower() == 'check' or content.lower().startswith('check '):
+        words = content.split(' ', 1)
+        if len(words) <= 1:
+            await message.channel.send(dictionary['wrong_check'].format(prefix=config['prefix']))
+            return
+        if not words[1].isdigit():
+            await message.channel.send(dictionary['wrong_id'])
+            return
+        query = 'SELECT images.status, images.submitted_by FROM images WHERE images.id={0}'.format(words[1])
+        db_cursor.execute(query)
+        result = db_cursor.fetchone()
+        if not result:
+            await message.channel.send(dictionary['wrong_id'])
+            return
+        await message.channel.send(dictionary['status_report'].format(status=statuses[result[0]], meme_id=words[1], author=result[1]))
+        return
 
     # only for admin
     if message.author.id == config['admin_id']:
@@ -227,9 +246,11 @@ def main():
     global config
     global dictionary
     global memes_ok
+    global statuses
     config = dotenv_values('.env')
     config['admin_id'] = int(config['admin_id'])
     dictionary = dotenv_values(config['dictionary'])
+    statuses = dotenv_values(config['statuses'])
     memes_ok = True
     logging.addLevelName(5, 'OUTPUT')
     logging.OUTPUT = 5
