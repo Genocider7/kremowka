@@ -155,7 +155,6 @@ def remove_user_timeout(user_id):
 
 @client.event
 async def on_message(message):
-    #TODO add help command 
     if type(message.channel) == discord.DMChannel and len(message.attachments) > 0:
         if message.author.id in timeout_users:
             await message.channel.send(dictionary['wait_for_downtime'])
@@ -231,6 +230,10 @@ async def on_message(message):
         await message.channel.send(dictionary['status_report'].format(status=statuses[result[0]], meme_id=words[1], author=result[1]))
         return
 
+    if content.lower().startswith('help'):
+        await message.channel.send(help_str)
+        return
+
     # only for admin
     if message.author.id == config['admin_id']:
         if content == 'off':
@@ -247,10 +250,13 @@ def main():
     global dictionary
     global memes_ok
     global statuses
+    global help_str
     config = dotenv_values('.env')
     config['admin_id'] = int(config['admin_id'])
     dictionary = dotenv_values(config['dictionary'])
     statuses = dotenv_values(config['statuses'])
+    with open(config['help_file'], 'r', encoding='utf8') as file:
+        help_str = file.read()
     memes_ok = True
     logging.addLevelName(5, 'OUTPUT')
     logging.OUTPUT = 5
