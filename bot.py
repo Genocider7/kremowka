@@ -129,25 +129,25 @@ async def receive_file(url, author_name, author_id, where_to_send):
 
 @client.event
 async def on_ready():
-    global Mainscheduler
+    global scheduler
     global timeout_users
     timeout_users = []
     get_channels_from_db()
     log('Connected to discord servers!')
     log('logged in as ' + client.user.name)
     log('id ' + str(client.user.id))
-    Mainscheduler = AsyncIOScheduler(timezone='Europe/Warsaw')
-    Mainscheduler.add_job(stop_receiving_memes, CronTrigger(hour=21, minute=35, second=0))
-    Mainscheduler.add_job(start_receiving_memes, CronTrigger(hour=21, minute=40, second=0))
-    Mainscheduler.add_job(prepare_embed, CronTrigger(hour=21, minute=30, second=0))
-    Mainscheduler.add_job(send_pope_memes, CronTrigger(hour=21, minute=37, second=0))
-    Mainscheduler.start()
+    scheduler = AsyncIOScheduler(timezone='Europe/Warsaw')
+    scheduler.add_job(stop_receiving_memes, CronTrigger(hour=21, minute=35, second=0))
+    scheduler.add_job(start_receiving_memes, CronTrigger(hour=21, minute=40, second=0))
+    scheduler.add_job(prepare_embed, CronTrigger(hour=21, minute=30, second=0))
+    scheduler.add_job(send_pope_memes, CronTrigger(hour=21, minute=37, second=0))
+    scheduler.start()
 
 def add_user_timeout(user_id):
     global timeout_users
-    global Mainscheduler
+    global scheduler
     timeout_users.append(user_id)
-    Mainscheduler.add_job(remove_user_timeout, 'date', run_date=datetime.now(tz=timezone('Europe/Warsaw')) + timedelta(minutes=10), args=[user_id])
+    scheduler.add_job(remove_user_timeout, 'date', run_date=datetime.now(tz=timezone('Europe/Warsaw')) + timedelta(minutes=10), args=[user_id])
 
 def remove_user_timeout(user_id):
     global timeout_users
