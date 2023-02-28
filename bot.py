@@ -231,7 +231,7 @@ async def on_message(message):
         return
 
     if content.lower().startswith('help'):
-        await message.channel.send(help_str)
+        await message.channel.send(help_str.format(prefix=config['prefix']))
         return
 
     # only for admin
