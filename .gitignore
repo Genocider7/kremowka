@@ -3,5 +3,7 @@
 **.png
 **.log
 **.dict
+**.sql
 !dictionaries/template.dict
 help.txt
+meme_judging/.env
