@@ -86,7 +86,7 @@ def main():
         hashes[id] = waiting_hash
         
     for key, value in duplicates.items():
-        query = 'INSERT INTO images (checked_image, duplicate) VALUES ({checked_image}, {duplicate})'.format(checked_image=key, duplicate=value)
+        query = 'INSERT INTO duplicates (checked_image, duplicate) VALUES ({checked_image}, {duplicate})'.format(checked_image=key, duplicate=value)
         db_cursor.execute(query)
         db_handler.commit()
 
