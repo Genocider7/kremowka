@@ -4,6 +4,9 @@
 **.log
 **.dict
 **.sql
+!meme_judging/no_image.jpg
 !dictionaries/template.dict
 help.txt
-meme_judging/.env
+meme_judging/**.env
+!meme_judging/template.env
+meme_judging/temp
