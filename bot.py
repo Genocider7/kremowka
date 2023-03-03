@@ -155,6 +155,8 @@ def remove_user_timeout(user_id):
 
 @client.event
 async def on_message(message):
+    if message.author == client.user:
+        return
     if type(message.channel) == discord.DMChannel and len(message.attachments) > 0:
         if message.author.id in timeout_users:
             await message.channel.send(dictionary['wait_for_downtime'])
