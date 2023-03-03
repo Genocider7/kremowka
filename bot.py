@@ -34,7 +34,7 @@ def log(message):
     logger.log(msg = message, level = logger.level)
     print(message)
 
-def connect_db():
+def connect_db(main_connect = True):
     global db_handler
     global db_cursor
     db_handler = mysql.connector.connect(
@@ -44,7 +44,10 @@ def connect_db():
         database=config['database']
     )
     db_cursor = db_handler.cursor()
-    log('Connected to mysql database!')
+    if main_connect:
+        log('Connected to mysql database!')
+    else:
+        log('Refreshed msql connection')
 
 def get_channels_from_db():
     global channels
@@ -148,6 +151,7 @@ async def on_ready():
     scheduler.add_job(prepare_embed, CronTrigger(hour=21, minute=30, second=0))
     scheduler.add_job(send_pope_memes, CronTrigger(hour=21, minute=37, second=0))
     scheduler.add_job(split_log_file, CronTrigger(hour=0))
+    scheduler.add_job(connect_db, CronTrigger(minute='3-59/5'), args=[False])
     scheduler.start()
 
 def split_log_file():
