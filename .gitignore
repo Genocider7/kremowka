@@ -10,3 +10,5 @@ help.txt
 meme_judging/**.env
 !meme_judging/template.env
 meme_judging/temp
+meme_judging/__pycache__
+status_dictionary
