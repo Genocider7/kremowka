@@ -9,6 +9,7 @@ from pytz import timezone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from hashlib import md5
+from traceback import format_exc as exception_traceback
 
 intents = discord.Intents.default()
 intents.guilds = True
@@ -159,95 +160,105 @@ def remove_user_timeout(user_id):
 async def on_message(message):
     if message.author == client.user:
         return
-    if type(message.channel) == discord.DMChannel and len(message.attachments) > 0:
-        if message.author.id in timeout_users:
-            await message.channel.send(dictionary['wait_for_downtime'])
-            return
-        if not memes_ok:
-            await message.channel.send(dictionary['wrong_time_for_memes'])
-            return
-        if len(message.attachments) > 1:
-            await message.channel.send(dictionary['seperate_memes_warning'])
-            return
-        if message.content != "":
-            await message.channel.send(dictionary['no_message_warning'])
-            return
-        meme = message.attachments[0]
-        if not meme.filename.endswith('.jpg') and not meme.filename.endswith('.png'):
-            await message.channel.send(dictionary['wrong_extension_warning'])
-            return
-        await receive_file(meme.url, message.author.display_name, message.author.id, message.channel)
-        return
-
-    if type(message.channel) == discord.DMChannel and validators.url(message.content):
-        if message.author.id in timeout_users:
-            await message.channel.send(dictionary['wait_for_downtime'])
-            return
-        if not message.content.endswith('.jpg') and not message.content.endswith('.png'):
-            await message.channel.send(dictionary['wrong_extension_warning'])
-            return
-        await receive_file(message.content, message.author.display_name, message.author.id, message.channel)
-        return
-
-    if not message.content.startswith(config['prefix']):
-        return
-    content = message.content[len(config['prefix']):]
-
-    if content.lower() == 'config' or content.lower().startswith('config '):
-        if type(message.channel) == discord.TextChannel:
-            if message.guild.owner_id == message.author.id:
-                words = content.split(' ', 1)
-                if len(words) <= 1:
-                    await message.channel.send(dictionary['wrong_config'].format(prefix=config['prefix']))
-                    return
-                channel_id = check_for_channel_id(words[1])
-                if channel_id == False:
-                    await message.channel.send(dictionary['no_channel_found'])
-                    return
-                success = configure_channel(channel_id, message.guild.id)
-                if not success:
-                    await message.channel.send(dictionary['configure_channel_error'])
-                    return
-                await message.channel.send(dictionary['configure_channel_success'])
+    try:
+        if type(message.channel) == discord.DMChannel and len(message.attachments) > 0:
+            if message.author.id in timeout_users:
+                await message.channel.send(dictionary['wait_for_downtime'])
                 return
+            if not memes_ok:
+                await message.channel.send(dictionary['wrong_time_for_memes'])
+                return
+            if len(message.attachments) > 1:
+                await message.channel.send(dictionary['seperate_memes_warning'])
+                return
+            if message.content != "":
+                await message.channel.send(dictionary['no_message_warning'])
+                return
+            meme = message.attachments[0]
+            if not meme.filename.endswith('.jpg') and not meme.filename.endswith('.png'):
+                await message.channel.send(dictionary['wrong_extension_warning'])
+                return
+            await receive_file(meme.url, message.author.display_name, message.author.id, message.channel)
+            return
+
+        if type(message.channel) == discord.DMChannel and validators.url(message.content):
+            if message.author.id in timeout_users:
+                await message.channel.send(dictionary['wait_for_downtime'])
+                return
+            if not message.content.endswith('.jpg') and not message.content.endswith('.png'):
+                await message.channel.send(dictionary['wrong_extension_warning'])
+                return
+            await receive_file(message.content, message.author.display_name, message.author.id, message.channel)
+            return
+
+        if not message.content.startswith(config['prefix']):
+            return
+        content = message.content[len(config['prefix']):]
+
+        if content.lower() == 'config' or content.lower().startswith('config '):
+            if type(message.channel) == discord.TextChannel:
+                if message.guild.owner_id == message.author.id:
+                    words = content.split(' ', 1)
+                    if len(words) <= 1:
+                        await message.channel.send(dictionary['wrong_config'].format(prefix=config['prefix']))
+                        return
+                    channel_id = check_for_channel_id(words[1])
+                    if channel_id == False:
+                        await message.channel.send(dictionary['no_channel_found'])
+                        return
+                    success = configure_channel(channel_id, message.guild.id)
+                    if not success:
+                        await message.channel.send(dictionary['configure_channel_error'])
+                        return
+                    await message.channel.send(dictionary['configure_channel_success'])
+                    return
+                else:
+                    await message.channel.send(dictionary['no_permission_config'])
+                    return
             else:
-                await message.channel.send(dictionary['no_permission_config'])
+                await message.channel.send(dictionary['DM_config'])
                 return
-        else:
-            await message.channel.send(dictionary['DM_config'])
+
+        if content.lower() == 'check' or content.lower().startswith('check '):
+            words = content.split(' ', 1)
+            if len(words) <= 1:
+                await message.channel.send(dictionary['wrong_check'].format(prefix=config['prefix']))
+                return
+            if not words[1].isdigit():
+                await message.channel.send(dictionary['wrong_id'])
+                return
+            query = 'SELECT images.status, images.submitted_by FROM images WHERE images.id={0}'.format(words[1])
+            db_cursor.execute(query)
+            result = db_cursor.fetchone()
+            if not result:
+                await message.channel.send(dictionary['wrong_id'])
+                return
+            await message.channel.send(dictionary['status_report'].format(status=statuses[result[0]], meme_id=words[1], author=result[1]))
             return
 
-    if content.lower() == 'check' or content.lower().startswith('check '):
-        words = content.split(' ', 1)
-        if len(words) <= 1:
-            await message.channel.send(dictionary['wrong_check'].format(prefix=config['prefix']))
+        if content.lower().startswith('help'):
+            await message.channel.send(help_str.format(prefix=config['prefix']))
             return
-        if not words[1].isdigit():
-            await message.channel.send(dictionary['wrong_id'])
-            return
-        query = 'SELECT images.status, images.submitted_by FROM images WHERE images.id={0}'.format(words[1])
-        db_cursor.execute(query)
-        result = db_cursor.fetchone()
-        if not result:
-            await message.channel.send(dictionary['wrong_id'])
-            return
-        await message.channel.send(dictionary['status_report'].format(status=statuses[result[0]], meme_id=words[1], author=result[1]))
-        return
 
-    if content.lower().startswith('help'):
-        await message.channel.send(help_str.format(prefix=config['prefix']))
-        return
+        # only for admin
+        if message.author.id == config['admin_id']:
+            if content == 'off':
+                await client.close()
+            if content == 'meme':
+                await prepare_embed()
+                await message.channel.send(embed=pope_embed)
+            if content == '2137':
+                await prepare_embed()
+                await send_pope_memes()
 
-    # only for admin
-    if message.author.id == config['admin_id']:
-        if content == 'off':
-            await client.close()
-        if content == 'meme':
-            await prepare_embed()
-            await message.channel.send(embed=pope_embed)
-        if content == '2137':
-            await prepare_embed()
-            await send_pope_memes()
+    except Exception as e:
+        tb = exception_traceback()
+        lines = tb.split('\n')
+        for line in lines:
+            if len(line) == 0:
+                continue
+            logger.error(line)
+        raise e
 
 def main():
     global config
