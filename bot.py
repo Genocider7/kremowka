@@ -10,6 +10,8 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from hashlib import md5
 from traceback import format_exc as exception_traceback
+from os import rename as move, mkdir
+from os.path import exists as path_exists, join as path_join
 
 intents = discord.Intents.default()
 intents.guilds = True
@@ -20,12 +22,13 @@ logger = None
 
 def set_logger():
     global logger
+    global log_handler
     logger = logging.getLogger()
     logger.setLevel(logging.OUTPUT)
-    handler = logging.FileHandler(config['log_file'], 'a', 'utf8')
+    log_handler = logging.FileHandler(config['log_file'], 'a', 'utf8')
     formatter = logging.Formatter(fmt = '%(levelname)s :: %(asctime)s - %(message)s')
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
+    log_handler.setFormatter(formatter)
+    logger.addHandler(log_handler)
 
 def log(message):
     logger.log(msg = message, level = logger.level)
@@ -144,7 +147,21 @@ async def on_ready():
     scheduler.add_job(start_receiving_memes, CronTrigger(hour=21, minute=40, second=0))
     scheduler.add_job(prepare_embed, CronTrigger(hour=21, minute=30, second=0))
     scheduler.add_job(send_pope_memes, CronTrigger(hour=21, minute=37, second=0))
+    scheduler.add_job(split_log_file, CronTrigger(hour=0))
     scheduler.start()
+
+def split_log_file():
+    global logger
+    global log_handler
+    logger.removeHandler(log_handler)
+    log_handler.close()
+    if not path_exists(config['old_log_dir']):
+        mkdir(config['old_log_dir'])
+    move(config['log_file'], path_join(config['old_log_dir'], datetime.now(tz=timezone('Europe/Warsaw')).strftime('kremowka_%Y_%m_%d.log')))
+    log_handler = logging.FileHandler(config['log_file'], 'a', 'utf8')
+    formatter = logging.Formatter(fmt = '%(levelname)s :: %(asctime)s - %(message)s')
+    log_handler.setFormatter(formatter)
+    logger.addHandler(log_handler)
 
 def add_user_timeout(user_id):
     global timeout_users
@@ -243,6 +260,7 @@ async def on_message(message):
         # only for admin
         if message.author.id == config['admin_id']:
             if content == 'off':
+                log('Turning off bot')
                 await client.close()
             if content == 'meme':
                 await prepare_embed()
