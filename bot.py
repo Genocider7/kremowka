@@ -262,8 +262,8 @@ def main():
     with open(config['help_file'], 'r', encoding='utf8') as file:
         help_str = file.read()
     memes_ok = True
-    logging.addLevelName(5, 'OUTPUT')
-    logging.OUTPUT = 5
+    logging.addLevelName(15, 'OUTPUT')
+    logging.OUTPUT = 15
     set_logger()
     connect_db()
     client.run(config['token'])
