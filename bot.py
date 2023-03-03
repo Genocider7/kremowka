@@ -136,6 +136,8 @@ async def on_ready():
     log('Connected to discord servers!')
     log('logged in as ' + client.user.name)
     log('id ' + str(client.user.id))
+    activity = discord.CustomActivity('{prefix}help'.format(config['prefix']))
+    client.change_presence(status=discord.Status.online, activity=activity)
     scheduler = AsyncIOScheduler(timezone='Europe/Warsaw')
     scheduler.add_job(stop_receiving_memes, CronTrigger(hour=21, minute=35, second=0))
     scheduler.add_job(start_receiving_memes, CronTrigger(hour=21, minute=40, second=0))
