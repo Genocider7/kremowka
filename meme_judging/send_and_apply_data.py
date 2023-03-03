@@ -11,6 +11,7 @@ from run_check import execute_mysql_query_on_server, execute_mysql_select
 
 default_file = 'data_to_send.env'
 temp_dir = 'temp'
+data_file = 'data.json'
 
 def unix_join(*args):
     temp = join_path(*args)
@@ -66,6 +67,8 @@ def main(args):
         rmtree(temp_dir)
     if exists(filename):
         remove(filename)
+    if exists(data_file):
+        remove(data_file)
 
 if __name__ == '__main__':
     main(argv[1:])
