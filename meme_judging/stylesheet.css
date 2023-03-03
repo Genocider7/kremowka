@@ -1,0 +1,55 @@
+p {
+    text-align: center;
+}
+
+#main-div {
+    float: left;
+}
+
+#previous-meme-button {
+    float: left;
+}
+
+#next-meme-button {
+    float: right;
+}
+
+#approve-button {
+    float: right;
+}
+
+table {
+    width: 100%;
+    align-items: center;
+}
+
+#cell1 {
+    width: 20%;
+}
+
+#cell2 {
+    width: 25%;
+}
+
+#cell3 {
+    width: 0px;
+}
+
+#download-button {
+    float: left;
+}
+
+.approved-label {
+    font-weight: bold;
+    color: green;
+}
+
+.suspended-label {
+    font-weight: bold;
+    color: orange;
+}
+
+.banned-label {
+    font-weight: bold;
+    color: red;
+}

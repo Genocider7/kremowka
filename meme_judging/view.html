@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Ocenianie memów</title>
+        <link rel="stylesheet" href="stylesheet.css">
+        <script type="text/javascript" src="data.json"></script>
+        <script type="text/javascript" src="view.js"></script>
+    </head>
+    <body>
+        <div id="main-div">
+            <p id="title-paragraph">Images to judge: <label id="image-to-judge-count">0</label>
+            <button id="download-button">Download</button></p>
+            <p id="currently-showing">-</p>
+            <img id="meme-to-judge" src="no_image.jpg">
+            <br>
+                <table id="button-table">
+                <tr>
+                    <td id="cell1">
+                        <button disabled id="previous-meme-button">Previous</button>
+                    </td>
+                    <td id="cell2">
+                        <button disabled id="approve-button" class="judge-button">Approve</button>
+                    </td>
+                    <td id="cell3">
+                        <button disabled id="suspend-button" class="judge-button">Suspend</button>
+                    </td>
+                    <td id="cell4">
+                        <button disabled id="ban-button" class="judge-button">Ban</button>
+                    </td>
+                    <td id="cell5">
+                        <button disabled id="next-meme-button">Next</button>
+                    </td>
+                </tr>
+            </table>
+            <br>
+        </div>
+    </body>
+</html>
