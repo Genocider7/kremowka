@@ -134,6 +134,14 @@ async def receive_file(url, author_name, author_id, where_to_send):
     await where_to_send.send(dictionary['meme_sent'].format(meme_id=id))
     add_user_timeout(author_id)
 
+def correct_hour(hour):
+    hour -= config['time_offset']
+    while hour < 0:
+        hour += 24
+    while hour >= 24:
+        hour -= 24
+    return hour
+
 @client.event
 async def on_ready():
     global scheduler
@@ -146,11 +154,11 @@ async def on_ready():
     activity = discord.Game('{prefix}help'.format(prefix=config['prefix']))
     await client.change_presence(activity=activity)
     scheduler = AsyncIOScheduler(timezone='Europe/Warsaw')
-    scheduler.add_job(stop_receiving_memes, CronTrigger(hour=21 - config['time_offset'], minute=35, second=0))
-    scheduler.add_job(start_receiving_memes, CronTrigger(hour=21 - config['time_offset'], minute=40, second=0))
-    scheduler.add_job(prepare_embed, CronTrigger(hour=21 - config['time_offset'], minute=30, second=0))
-    scheduler.add_job(send_pope_memes, CronTrigger(hour=21 - config['time_offset'], minute=37, second=0))
-    scheduler.add_job(split_log_file, CronTrigger(hour=0 - config['time_offset']))
+    scheduler.add_job(stop_receiving_memes, CronTrigger(hour=correct_hour(21), minute=35, second=0))
+    scheduler.add_job(start_receiving_memes, CronTrigger(hour=correct_hour(21), minute=40, second=0))
+    scheduler.add_job(prepare_embed, CronTrigger(hour=correct_hour(21), minute=30, second=0))
+    scheduler.add_job(send_pope_memes, CronTrigger(hour=correct_hour(21), minute=37, second=0))
+    scheduler.add_job(split_log_file, CronTrigger(hour=correct_hour(0)))
     scheduler.add_job(connect_db, CronTrigger(minute='3-59/5'), args=[False])
     scheduler.start()
 
