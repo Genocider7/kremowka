@@ -146,11 +146,11 @@ async def on_ready():
     activity = discord.Game('{prefix}help'.format(prefix=config['prefix']))
     await client.change_presence(activity=activity)
     scheduler = AsyncIOScheduler(timezone='Europe/Warsaw')
-    scheduler.add_job(stop_receiving_memes, CronTrigger(hour=21, minute=35, second=0))
-    scheduler.add_job(start_receiving_memes, CronTrigger(hour=21, minute=40, second=0))
-    scheduler.add_job(prepare_embed, CronTrigger(hour=21, minute=30, second=0))
-    scheduler.add_job(send_pope_memes, CronTrigger(hour=21, minute=37, second=0))
-    scheduler.add_job(split_log_file, CronTrigger(hour=0))
+    scheduler.add_job(stop_receiving_memes, CronTrigger(hour=21 - config['time_offset'], minute=35, second=0))
+    scheduler.add_job(start_receiving_memes, CronTrigger(hour=21 - config['time_offset'], minute=40, second=0))
+    scheduler.add_job(prepare_embed, CronTrigger(hour=21 - config['time_offset'], minute=30, second=0))
+    scheduler.add_job(send_pope_memes, CronTrigger(hour=21 - config['time_offset'], minute=37, second=0))
+    scheduler.add_job(split_log_file, CronTrigger(hour=0 - config['time_offset']))
     scheduler.add_job(connect_db, CronTrigger(minute='3-59/5'), args=[False])
     scheduler.start()
 
@@ -290,6 +290,7 @@ def main():
     global help_str
     config = dotenv_values('.env')
     config['admin_id'] = int(config['admin_id'])
+    config['time_offset'] = int(config['time_offset'])
     dictionary = dotenv_values(config['dictionary'])
     statuses = dotenv_values(config['statuses'])
     with open(config['help_file'], 'r', encoding='utf8') as file:
