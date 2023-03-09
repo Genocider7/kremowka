@@ -231,6 +231,12 @@ async def on_message(message):
         if content.lower() == 'config' or content.lower().startswith('config '):
             if type(message.channel) == discord.TextChannel:
                 if message.guild.owner_id == message.author.id:
+                    perms_ok = True
+                elif message.author.guild_permissions.administrator or message.author.guild_permissions.manage_channels:
+                    perms_ok = True
+                else:
+                    perms_ok = False
+                if perms_ok:
                     words = content.split(' ', 1)
                     if len(words) <= 1:
                         await message.channel.send(dictionary['wrong_config'].format(prefix=config['prefix']))
