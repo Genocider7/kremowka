@@ -1,0 +1,5 @@
+This is a bot to send certain memes at 21:37
+
+It uses memes provided by users - submit memes by sending it to this bot through DMs
+
+If you've encountered an issue, please report it at https://github.com/Genocider7/kremowka/issues

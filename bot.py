@@ -278,6 +278,10 @@ async def on_message(message):
         if content.lower().startswith('help'):
             await message.channel.send(help_str.format(prefix=config['prefix']))
             return
+        
+        if content.lower().startswith('about'):
+            await message.channel.send(about_str)
+            return
 
         # only for admin
         if message.author.id == config['admin_id']:
@@ -306,6 +310,7 @@ def main():
     global memes_ok
     global statuses
     global help_str
+    global about_str
     config = dotenv_values('.env')
     config['admin_id'] = int(config['admin_id'])
     config['time_offset'] = int(config['time_offset'])
@@ -313,6 +318,8 @@ def main():
     statuses = dotenv_values(config['statuses'])
     with open(config['help_file'], 'r', encoding='utf8') as file:
         help_str = file.read()
+    with open(config['about_file'], 'r', encoding='utf8') as file:
+        about_str = file.read()
     memes_ok = True
     logging.addLevelName(15, 'OUTPUT')
     logging.OUTPUT = 15

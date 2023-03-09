@@ -1,5 +1,6 @@
 {prefix}config <channel> - sets up a channel for bot to send memes to. Only server owner can use this command.
 {prefix}check <meme_id> - checks status of a meme with given id.
 {prefix}help - shows this prompt.
+{prefix}about - shows prompt explaining the bot.
 
 To send memes, send them as attachment or url to this bot by DMs.
