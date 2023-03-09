@@ -100,10 +100,14 @@ async def send_pope_memes():
 async def stop_receiving_memes():
     global memes_ok 
     memes_ok = False
+    game = discord.Game(config['maintanance'])
+    await client.change_presence(status = discord.Status.dnd, activity = game)
 
 async def start_receiving_memes():
     global memes_ok 
     memes_ok = True
+    game = discord.Game('{}help'.format(config['prefix']))
+    await client.change_presence(activity = game)
 
 def configure_channel(channel_id, server_id):
     global channels
@@ -154,10 +158,10 @@ async def on_ready():
     activity = discord.Game('{prefix}help'.format(prefix=config['prefix']))
     await client.change_presence(activity=activity)
     scheduler = AsyncIOScheduler(timezone='Europe/Warsaw')
-    scheduler.add_job(stop_receiving_memes, CronTrigger(hour=correct_hour(21), minute=35, second=0))
-    scheduler.add_job(start_receiving_memes, CronTrigger(hour=correct_hour(21), minute=40, second=0))
-    scheduler.add_job(prepare_embed, CronTrigger(hour=correct_hour(21), minute=30, second=0))
-    scheduler.add_job(send_pope_memes, CronTrigger(hour=correct_hour(21), minute=37, second=0))
+    scheduler.add_job(stop_receiving_memes, CronTrigger(hour=correct_hour(21), minute=34))
+    scheduler.add_job(start_receiving_memes, CronTrigger(hour=correct_hour(21), minute=38))
+    scheduler.add_job(prepare_embed, CronTrigger(hour=correct_hour(21), minute=36))
+    scheduler.add_job(send_pope_memes, CronTrigger(hour=correct_hour(21), minute=37))
     scheduler.add_job(split_log_file, CronTrigger(hour=correct_hour(0)))
     scheduler.add_job(connect_db, CronTrigger(minute='3-59/5'), args=[False])
     scheduler.start()
