@@ -179,7 +179,7 @@ def add_user_timeout(user_id):
     global timeout_users
     global scheduler
     timeout_users.append(user_id)
-    scheduler.add_job(remove_user_timeout, 'date', run_date=datetime.now(tz=timezone('Europe/Warsaw')) + timedelta(minutes=10), args=[user_id])
+    scheduler.add_job(remove_user_timeout, 'date', run_date=datetime.now(tz=timezone('Europe/Warsaw')) + timedelta(seconds=30), args=[user_id])
 
 def remove_user_timeout(user_id):
     global timeout_users
