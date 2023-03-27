@@ -95,7 +95,10 @@ async def prepare_embed():
 
 async def send_pope_memes():
     for channel in channels.values():
-        await channel.send(embed=pope_embed)
+        try:
+            await channel.send(embed=pope_embed)
+        except AttributeError:
+            pass
 
 async def stop_receiving_memes():
     global memes_ok 
