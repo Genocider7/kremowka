@@ -201,13 +201,16 @@ def remove_server_channel(server_id):
     log('Removed server with id {}'.format(server_id))
 
 async def check_channels():
+    servers_to_remove = []
     for server, channel in channels.items():
         try:
             client.fetch_guild(server)
         except discord.errors.NotFound:
-            remove_server_channel(server)
+            servers_to_remove.append(server)
         if channel == None:
-            remove_server_channel(server)
+            servers_to_remove.append(server)
+    for server in servers_to_remove:
+        remove_server_channel(server)
 
 @client.event
 async def on_message(message):
