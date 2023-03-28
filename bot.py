@@ -94,11 +94,11 @@ async def prepare_embed():
     get_image_embed(image)
 
 async def send_pope_memes():
-    for channel in channels.values():
-        try:
-            await channel.send(embed=pope_embed)
-        except AttributeError:
-            pass
+    for server, channel in channels.items():
+        if channel == None:
+            remove_server_channel(server)
+            continue
+        await channel.send(embed=pope_embed)
 
 async def stop_receiving_memes():
     global memes_ok 
@@ -167,6 +167,7 @@ async def on_ready():
     scheduler.add_job(send_pope_memes, CronTrigger(hour=correct_hour(21), minute=37))
     scheduler.add_job(split_log_file, CronTrigger(hour=correct_hour(0)))
     scheduler.add_job(connect_db, CronTrigger(minute='3-59/5'), args=[False])
+    scheduler.add_job(check_channels, CronTrigger(minute=0))
     scheduler.start()
 
 def split_log_file():
@@ -191,6 +192,22 @@ def add_user_timeout(user_id):
 def remove_user_timeout(user_id):
     global timeout_users
     timeout_users.remove(user_id)
+
+def remove_server_channel(server_id):
+    global channels
+    channels.pop(server_id)
+    db_cursor.execute('DELETE FROM channels WHERE guild_id=\"{}\"'.format(server_id))
+    db_handler.commit()
+    log('Removed server with id {}'.format(server_id))
+
+async def check_channels():
+    for server, channel in channels.items():
+        try:
+            client.fetch_guild(server)
+        except discord.errors.NotFound:
+            remove_server_channel(server)
+        if channel == None:
+            remove_server_channel(server)
 
 @client.event
 async def on_message(message):
