@@ -167,21 +167,23 @@ async def on_ready():
     scheduler.add_job(send_pope_memes, CronTrigger(hour=correct_hour(21), minute=37))
     scheduler.add_job(split_log_file, CronTrigger(hour=correct_hour(0)))
     scheduler.add_job(connect_db, CronTrigger(minute='3-59/5'), args=[False])
-    scheduler.add_job(check_channels, CronTrigger(minute=0))
+    scheduler.add_job(check_channels, CronTrigger(hour='*', minute=0))
     scheduler.start()
 
 def split_log_file():
     global logger
     global log_handler
+    logger.log(msg = '---End of log---', level = logger.level)
     logger.removeHandler(log_handler)
     log_handler.close()
     if not path_exists(config['old_log_dir']):
         mkdir(config['old_log_dir'])
-    move(config['log_file'], path_join(config['old_log_dir'], datetime.now(tz=timezone('Europe/Warsaw')).strftime('kremowka_%Y_%m_%d.log')))
+    move(config['log_file'], path_join(config['old_log_dir'], (datetime.now(tz=timezone('Europe/Warsaw')) - timedelta(days=1)).strftime('kremowka_%Y_%m_%d.log')))
     log_handler = logging.FileHandler(config['log_file'], 'a', 'utf8')
     formatter = logging.Formatter(fmt = '%(levelname)s :: %(asctime)s - %(message)s')
     log_handler.setFormatter(formatter)
     logger.addHandler(log_handler)
+    logger.log(msg = '---Start of log---', level = logger.level)
 
 def add_user_timeout(user_id):
     global timeout_users
