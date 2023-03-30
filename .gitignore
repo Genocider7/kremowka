@@ -4,6 +4,7 @@
 **.log
 **.dict
 **.sql
+**.diff
 !meme_judging/no_image.jpg
 !dictionaries/template.dict
 help.txt
