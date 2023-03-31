@@ -167,7 +167,7 @@ async def on_ready():
     scheduler.add_job(send_pope_memes, CronTrigger(hour=correct_hour(21), minute=37))
     scheduler.add_job(split_log_file, CronTrigger(hour=correct_hour(0)))
     scheduler.add_job(connect_db, CronTrigger(minute='3-59/5'), args=[False])
-    scheduler.add_job(check_channels, CronTrigger(hour='*', minute=0))
+    scheduler.add_job(check_channels, CronTrigger(hour='*/1', minute=0))
     scheduler.start()
 
 def split_log_file():
