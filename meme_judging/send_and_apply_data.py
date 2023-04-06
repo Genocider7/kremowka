@@ -50,13 +50,14 @@ def main(args):
     query = 'UPDATE images SET status=\"{}\" WHERE id={}'
     for key, value in images_status.items():
         sub_query = query.format(value, key)
-        select_query = 'SELECT CONCAT(images.basename, \".\", images.extension) AS filename FROM images WHERE id={}'.format(key)
+        select_query = 'SELECT CONCAT(images.basename, \".\", images.extension) AS filename, images.status AS status FROM images WHERE id={}'.format(key)
         ret = execute_mysql_select(client, select_query, config['mysql_database'], config['mysql_username'], config['mysql_password'])
         if len(ret) == 0:
             print('Error, no image with id={} found'.format(key))
             return
         image_file = ret[0]['filename']
-        current_location = unix_join(config['project_dir'], 'memes', 'checked', image_file)
+        image_status = ret[0]['status']
+        current_location = unix_join(config['project_dir'], 'memes', image_status, image_file)
         target_location = unix_join(config['project_dir'], 'memes', value, image_file)
         current_location = current_location.replace(' ', '\\ ')
         target_location = target_location.replace(' ', '\\ ')
