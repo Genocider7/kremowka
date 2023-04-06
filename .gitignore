@@ -5,6 +5,7 @@
 **.dict
 **.sql
 **.diff
+**.exe
 !meme_judging/no_image.jpg
 !dictionaries/template.dict
 help.txt
