@@ -10,7 +10,7 @@ from webbrowser import open as web_open
 temp_dir = 'temp'
 
 def execute_mysql_query_on_server(ssh_connection, query, mysql_database, mysql_username, mysql_password):
-    query = query.replace("\"", "\\\"")
+    query = query.replace('\"', '\\\"').replace('`', '\\`')
     return ssh_connection.exec_command('mysql {} -u{} -p{} -e\"{}\"'.format(mysql_database, mysql_username, mysql_password, query))
 
 def execute_mysql_select(ssh_connection, query, mysql_database, mysql_username, mysql_password):
