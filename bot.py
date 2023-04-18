@@ -98,7 +98,12 @@ async def send_pope_memes():
         if channel == None:
             remove_server_channel(server)
             continue
-        await channel.send(embed=pope_embed)
+        try:
+            await channel.send(embed=pope_embed)
+        except discord.errors.Forbidden:
+            guild = await client.fetch_guild(server)
+            owner = await client.fetch_user(guild.owner_id)
+            await owner.send(dictionary['missing_perms'])
 
 async def stop_receiving_memes():
     global memes_ok 
