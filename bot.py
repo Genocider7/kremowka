@@ -103,7 +103,7 @@ async def send_pope_memes():
         except discord.errors.Forbidden:
             guild = await client.fetch_guild(server)
             owner = await client.fetch_user(guild.owner_id)
-            await owner.send(dictionary['missing_perms'])
+            await owner.send(dictionary['missing_perms'].format(guild_name=guild.name))
 
 async def stop_receiving_memes():
     global memes_ok 
