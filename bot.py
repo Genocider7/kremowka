@@ -15,6 +15,7 @@ from os.path import exists as path_exists, join as path_join
 
 intents = discord.Intents.default()
 intents.guilds = True
+intents.message_content = True
 client = discord.Client(intents=intents)
 pope_embed = None
 channels = {}
@@ -134,7 +135,7 @@ def configure_channel(channel_id, server_id):
     return True
 
 async def receive_file(url, author_name, author_id, where_to_send):
-    extension = url[-3:]
+    extension = url.split('?')[0][-3:]
     basename = md5((str(author_id) + str(datetime.now())).encode()).hexdigest()
     with open(config['save_directory'] + basename + '.' + extension, 'wb') as file:
         file.write(requests.get(url).content)
