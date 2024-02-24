@@ -1,9 +1,9 @@
-from os import path
 import mysql.connector
 from dotenv import dotenv_values
 from imagehash import average_hash
 from PIL import Image
-from os import rename as move
+from os import rename as move, chdir
+from os.path import dirname, realpath, join as path_join
 
 memes_directory = 'memes'
 where_duplicates = {
@@ -47,7 +47,7 @@ def get_all_others():
     raw_ret = db_cursor.fetchall()
     ret = {}
     for record in raw_ret:
-        ret[record[2]] = path.join(memes_directory, record[1], record[0])
+        ret[record[2]] = path_join(memes_directory, record[1], record[0])
     return ret
 
 def load_hashes(image_filenames):
@@ -59,6 +59,7 @@ def load_hashes(image_filenames):
 
 def main():
     global config
+    chdir(dirname(realpath(__file__)))
     config = dotenv_values('.env')
     connect_db()
     waiting = get_all_waiting()
@@ -66,7 +67,7 @@ def main():
     hashes = load_hashes(other_memes)
     duplicates = {}
     for id in waiting.keys():
-        filepath = path.join(memes_directory, 'waiting', waiting[id])
+        filepath = path_join(memes_directory, 'waiting', waiting[id])
         with Image.open(filepath) as waiting_image:
             waiting_hash = average_hash(waiting_image, 16)
         check = True
@@ -82,7 +83,7 @@ def main():
         query = 'UPDATE images SET status=\"{target}\" WHERE id={id}'.format(target=target, id=id)
         db_cursor.execute(query)
         db_handler.commit()
-        move(filepath, path.join(memes_directory, target, waiting[id]))
+        move(filepath, path_join(memes_directory, target, waiting[id]))
         hashes[id] = waiting_hash
         
     for key, value in duplicates.items():

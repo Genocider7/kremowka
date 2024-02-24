@@ -1,7 +1,9 @@
-from warnings import filterwarnings
-filterwarnings('ignore') #pytz raises a very irritating warning because of apscheduler
-
-import discord, mysql.connector, requests, validators, logging
+import logging
+from discord import Intents, Client, Embed, Game, Status, DMChannel, TextChannel
+from discord.errors import Forbidden as disc_Forbidden, NotFound as disc_not_found
+from requests import get as request_get
+from mysql.connector import connect as connect_mysql
+from validators import url as validate_url
 from dotenv import dotenv_values
 from datetime import datetime, timedelta
 from random import choice
@@ -13,10 +15,10 @@ from traceback import format_exc as exception_traceback
 from os import rename as move, mkdir
 from os.path import exists as path_exists, join as path_join
 
-intents = discord.Intents.default()
+intents = Intents.default()
 intents.guilds = True
 intents.message_content = True
-client = discord.Client(intents=intents)
+client = Client(intents=intents)
 pope_embed = None
 channels = {}
 logger = None
@@ -38,7 +40,7 @@ def log(message):
 def connect_db(main_connect = True):
     global db_handler
     global db_cursor
-    db_handler = mysql.connector.connect(
+    db_handler = connect_mysql(
         host='localhost',
         user=config['db_username'],
         password=config['db_password'],
@@ -86,7 +88,7 @@ def get_random_image():
 def get_image_embed(image):
     global pope_embed
     (url, author) = image
-    pope_embed = discord.Embed()
+    pope_embed = Embed()
     pope_embed.set_image(url=url)
     pope_embed.set_footer(text=dictionary['embed_footer'].format(author_name=author))
 
@@ -101,7 +103,7 @@ async def send_pope_memes():
             continue
         try:
             await channel.send(embed=pope_embed)
-        except discord.errors.Forbidden:
+        except disc_Forbidden:
             guild = await client.fetch_guild(server)
             owner = await client.fetch_user(guild.owner_id)
             await owner.send(dictionary['missing_perms'].format(guild_name=guild.name))
@@ -109,13 +111,13 @@ async def send_pope_memes():
 async def stop_receiving_memes():
     global memes_ok 
     memes_ok = False
-    game = discord.Game(config['maintanance'])
-    await client.change_presence(status = discord.Status.dnd, activity = game)
+    game = Game(config['maintanance'])
+    await client.change_presence(status = Status.dnd, activity = game)
 
 async def start_receiving_memes():
     global memes_ok 
     memes_ok = True
-    game = discord.Game('{}help'.format(config['prefix']))
+    game = Game('{}help'.format(config['prefix']))
     await client.change_presence(activity = game)
 
 def configure_channel(channel_id, server_id):
@@ -138,7 +140,7 @@ async def receive_file(url, author_name, author_id, where_to_send):
     extension = url.split('?')[0][-3:]
     basename = md5((str(author_id) + str(datetime.now())).encode()).hexdigest()
     with open(config['save_directory'] + basename + '.' + extension, 'wb') as file:
-        file.write(requests.get(url).content)
+        file.write(request_get(url).content)
     db_cursor.execute('INSERT INTO images (basename, extension, submitted_by, submitted_by_id) VALUES (\"' + basename + '\", \"' + extension + '\", \"' + author_name + '\", \"' + str(author_id) + '\")')
     db_handler.commit()
     db_cursor.execute('SELECT images.id AS id FROM images WHERE images.basename=\"' + basename + '\" ORDER BY images.id DESC LIMIT 1')
@@ -164,7 +166,7 @@ async def on_ready():
     log('Connected to discord servers!')
     log('logged in as ' + client.user.name)
     log('id ' + str(client.user.id))
-    activity = discord.Game('{prefix}help'.format(prefix=config['prefix']))
+    activity = Game('{prefix}help'.format(prefix=config['prefix']))
     await client.change_presence(activity=activity)
     scheduler = AsyncIOScheduler(timezone='Europe/Warsaw')
     scheduler.add_job(stop_receiving_memes, CronTrigger(hour=correct_hour(21), minute=34))
@@ -213,7 +215,7 @@ async def check_channels():
     for server, channel in channels.items():
         try:
             client.fetch_guild(server)
-        except discord.errors.NotFound:
+        except disc_not_found:
             servers_to_remove.append(server)
         if channel == None:
             servers_to_remove.append(server)
@@ -225,7 +227,7 @@ async def on_message(message):
     if message.author == client.user:
         return
     try:
-        if type(message.channel) == discord.DMChannel and len(message.attachments) > 0:
+        if type(message.channel) == DMChannel and len(message.attachments) > 0:
             if message.author.id in timeout_users:
                 await message.channel.send(dictionary['wait_for_downtime'])
                 return
@@ -245,7 +247,7 @@ async def on_message(message):
             await receive_file(meme.url, message.author.display_name, message.author.id, message.channel)
             return
 
-        if type(message.channel) == discord.DMChannel and validators.url(message.content):
+        if type(message.channel) == DMChannel and validate_url(message.content):
             if message.author.id in timeout_users:
                 await message.channel.send(dictionary['wait_for_downtime'])
                 return
@@ -260,7 +262,7 @@ async def on_message(message):
         content = message.content[len(config['prefix']):]
 
         if content.lower() == 'config' or content.lower().startswith('config '):
-            if type(message.channel) == discord.TextChannel:
+            if type(message.channel) == TextChannel:
                 if message.guild.owner_id == message.author.id:
                     perms_ok = True
                 elif message.author.guild_permissions.administrator or message.author.guild_permissions.manage_channels:

@@ -2,7 +2,8 @@ from warnings import filterwarnings
 filterwarnings('ignore') #paramiko gives a warning for python 3.6
 from paramiko import SSHClient, AutoAddPolicy
 from dotenv import dotenv_values
-from os import path, mkdir
+from os import mkdir, chdir
+from os.path import dirname, realpath, isdir, join as path_join
 from shutil import rmtree
 from json import dumps
 from webbrowser import open as web_open
@@ -14,7 +15,7 @@ def execute_mysql_query_on_server(ssh_connection, query, mysql_database, mysql_u
     return ssh_connection.exec_command('mysql {} -u{} -p{} -e\"{}\"'.format(mysql_database, mysql_username, mysql_password, query))
 
 def execute_mysql_select(ssh_connection, query, mysql_database, mysql_username, mysql_password):
-    (stdin, stdout, stderr) = execute_mysql_query_on_server(ssh_connection, query, mysql_database, mysql_username, mysql_password)
+    (_, stdout, _) = execute_mysql_query_on_server(ssh_connection, query, mysql_database, mysql_username, mysql_password)
     lines = stdout.readlines()
     fields = None
     ret = []
@@ -44,12 +45,13 @@ def main():
     global config
     global client
     global memes_dir
+    chdir(dirname(realpath(__file__)))
     client = SSHClient()
     config = dotenv_values('.env')
-    memes_dir = path.join(config['project_dir'], 'memes', 'checked')
+    memes_dir = path_join(config['project_dir'], 'memes', 'checked')
     client.set_missing_host_key_policy(AutoAddPolicy)
     establish_ssh_connection(config['server_ip'], config['server_user'], config['user_password'], config['rsa_key_directory'], config['rsa_key_passcode'])
-    if path.isdir(temp_dir):
+    if isdir(temp_dir):
         rmtree(temp_dir)
     mkdir(temp_dir)
     sftp = client.open_sftp()
@@ -60,9 +62,9 @@ def main():
         return
     print("Found {} memes".format(len(files)))
     for file in files:
-        sftp.get(path.join(memes_dir, file['filename']).replace("\\", "/"), path.join(temp_dir, file['target_filename']))
+        sftp.get(path_join(memes_dir, file['filename']).replace("\\", "/"), path_join(temp_dir, file['target_filename']))
     sftp.close()
-    array_for_json = [path.join(temp_dir, file['target_filename']) for file in files]
+    array_for_json = [path_join(temp_dir, file['target_filename']) for file in files]
     with open('data.json', 'w', encoding='utf8') as file:
         file.write('var images = ' + dumps(array_for_json))
     web_open('view.html')
