@@ -97,7 +97,7 @@ async def prepare_embed():
     get_image_embed(image)
 
 async def send_pope_memes():
-    for server, channel in channels.items():
+    for server, channel in channels.copy().items():
         if channel == None:
             remove_server_channel(server)
             continue
