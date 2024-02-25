@@ -1,0 +1,11 @@
+APScheduler==3.10.1
+discord.py==2.3.2
+imagehash==4.3.1
+mysql_connector_repackaged==0.3.1
+paramiko==3.4.0
+Pillow==10.1.0
+Pillow==10.2.0
+python-dotenv==1.0.1
+pytz==2023.3
+Requests==2.31.0
+validators==0.22.0
