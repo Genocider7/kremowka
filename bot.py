@@ -14,6 +14,7 @@ from hashlib import md5
 from traceback import format_exc as exception_traceback
 from os import rename as move, mkdir
 from os.path import exists as path_exists, join as path_join
+from traceback import format_exc
 
 intents = Intents.default()
 intents.guilds = True
@@ -106,7 +107,13 @@ async def send_pope_memes():
         except disc_Forbidden:
             guild = await client.fetch_guild(server)
             owner = await client.fetch_user(guild.owner_id)
-            await owner.send(dictionary['missing_perms'].format(guild_name=guild.name))
+            try:
+                await owner.send(dictionary['missing_perms'].format(guild_name=guild.name))
+            except:
+                stack_trace = format_exc()
+                for line in stack_trace.split('\n'):
+                    logger.error(line)
+                print(stack_trace)
 
 async def stop_receiving_memes():
     global memes_ok 
@@ -214,7 +221,7 @@ async def check_channels():
     servers_to_remove = []
     for server, channel in channels.items():
         try:
-            client.fetch_guild(server)
+            await client.fetch_guild(server)
         except disc_not_found:
             servers_to_remove.append(server)
         if channel == None:
