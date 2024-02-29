@@ -1,9 +1,9 @@
-import mysql.connector
+from mysql.connector import connect as connect_mysql
 from dotenv import dotenv_values
 from imagehash import average_hash
 from PIL import Image
 from os import rename as move, chdir
-from os.path import dirname, realpath, join as path_join
+from os.path import dirname, realpath, join as path_join, exists as file_exists
 
 memes_directory = 'memes'
 where_duplicates = {
@@ -19,7 +19,7 @@ where_duplicates = {
 def connect_db():
     global db_handler
     global db_cursor
-    db_handler = mysql.connector.connect(
+    db_handler = connect_mysql(
         host='localhost',
         user=config['db_username'],
         password=config['db_password'],
@@ -33,6 +33,9 @@ def get_all_waiting():
     raw_ret = db_cursor.fetchall()
     ret = {}
     for record in raw_ret:
+        if not file_exists(path_join(memes_directory, 'waiting', record[0])):
+            remove_from_database(record[1])
+            continue
         ret[record[1]] = record[0]
     return ret
 
@@ -47,8 +50,17 @@ def get_all_others():
     raw_ret = db_cursor.fetchall()
     ret = {}
     for record in raw_ret:
+        meme_path = path_join(memes_directory, record[1], record[0])
+        if not file_exists(meme_path):
+            remove_from_database(record[2])
+            continue
         ret[record[2]] = path_join(memes_directory, record[1], record[0])
     return ret
+
+def remove_from_database(key_id):
+    query = 'DELETE FROM images WHERE images.id=\"{}\"'.format(key_id)
+    db_cursor.execute(query)
+    db_handler.commit()
 
 def load_hashes(image_filenames):
     ret = {}

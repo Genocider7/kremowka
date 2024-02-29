@@ -1,0 +1,1 @@
+Here are deleted memes to not mess the other directories
