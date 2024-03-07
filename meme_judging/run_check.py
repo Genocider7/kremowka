@@ -1,5 +1,3 @@
-from warnings import filterwarnings
-filterwarnings('ignore') #paramiko gives a warning for python 3.6
 from paramiko import SSHClient, AutoAddPolicy
 from dotenv import dotenv_values
 from os import mkdir, chdir
