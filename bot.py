@@ -14,7 +14,6 @@ from hashlib import md5
 from traceback import format_exc as exception_traceback
 from os import rename as move, mkdir
 from os.path import exists as path_exists, join as path_join
-from traceback import format_exc
 
 intents = Intents.default()
 intents.guilds = True
@@ -110,10 +109,7 @@ async def send_pope_memes():
             try:
                 await owner.send(dictionary['missing_perms'].format(guild_name=guild.name))
             except:
-                stack_trace = format_exc()
-                for line in stack_trace.split('\n'):
-                    logger.error(line)
-                print(stack_trace)
+                log('Couldn\'t message the owner of the server {}'.format(guild.name))
 
 async def stop_receiving_memes():
     global memes_ok 
