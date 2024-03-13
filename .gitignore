@@ -1,4 +1,4 @@
-.env
+**.env
 **.jpg
 **.png
 **.log
@@ -12,7 +12,7 @@
 !dictionaries/template.dict
 help.txt
 about.txt
-meme_judging/**.env
+!template.env
 !meme_judging/template.env
 meme_judging/temp
 meme_judging/sus_temp
