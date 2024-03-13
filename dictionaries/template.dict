@@ -14,4 +14,5 @@ wait_for_downtime=Please wait before posting memes (1 meme per 30 seconds).
 wrong_check=Incorrect usage. Use {prefix}check <meme_id>.
 wrong_id=No meme found with the given id.
 status_report=Meme #{meme_id} - status: {status} - Author: {author}
-missing_perms=I'm missing permissions to send messages in a specified channel. Please grant permissions for me to send memes
+missing_perms=I'm missing permissions to send messages in a specified channel. Please grant permissions for me to send memes.
+channel_not_found=I couldn't find a channel that I was supposed to send a meme to.

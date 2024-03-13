@@ -97,19 +97,38 @@ async def prepare_embed():
     get_image_embed(image)
 
 async def send_pope_memes():
+    results = {}
     for server, channel in channels.copy().items():
         if channel == None:
             remove_server_channel(server)
             continue
         try:
             await channel.send(embed=pope_embed)
+            result_code = 0
         except disc_Forbidden:
             guild = await client.fetch_guild(server)
             owner = await client.fetch_user(guild.owner_id)
             try:
                 await owner.send(dictionary['missing_perms'].format(guild_name=guild.name))
+                result_code = 1
             except:
-                log('Couldn\'t message the owner of the server {}'.format(guild.name))
+                result_code = 33
+        except disc_not_found:
+            guild = await client.fetch_guild(server)
+            owner = await client.fetch_user(guild.owner_id)
+            try:
+                await owner.send(dictionary['channel_not_found'].format(guild_name=guild.name, prefix=config['prefix']))
+                result_code = 2
+            except:
+                result_code = 34
+        except:
+            result_code = 64
+        finally:
+            results[server] = result_code
+    
+    log('Sending memes results:')
+    for server_id, result in results.items():
+        log('Server {}: {}'.format(server_id, result))    
 
 async def stop_receiving_memes():
     global memes_ok 
