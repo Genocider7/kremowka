@@ -1,3 +1,5 @@
+import sys
+
 from paramiko import SSHClient, AutoAddPolicy
 from dotenv import dotenv_values
 from os import mkdir, chdir
@@ -43,7 +45,11 @@ def main():
     global config
     global client
     global memes_dir
-    chdir(dirname(realpath(__file__)))
+    if getattr(sys, 'frozen', False):
+        app_path = dirname(sys.executable)
+    else:
+        app_path = realpath(__file__)
+    chdir(app_path)
     client = SSHClient()
     config = dotenv_values('.env')
     memes_dir = path_join(config['project_dir'], 'memes', 'checked')

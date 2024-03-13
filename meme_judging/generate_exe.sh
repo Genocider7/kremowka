@@ -9,8 +9,9 @@ if [ -f "$name.exe" ]
 then
 rm "$name.exe"
 fi
+pip install pyinstaller==6.1.0
 echo -n Creating $name.exe...
-pyinstaller -F --log-level CRITICAL $1 &> $temp_file
+pyinstaller --onefile --log-level ERROR $1 &> $temp_file
 if [ -f "dist/$name.exe" ]
 then
 echo -e "\tOK"

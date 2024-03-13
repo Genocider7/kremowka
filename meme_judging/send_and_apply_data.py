@@ -1,10 +1,8 @@
-from warnings import filterwarnings
-filterwarnings('ignore') #paramiko gives a warning for python 3.6
+import sys
 from dotenv import dotenv_values
-from sys import argv
-from os import path
+from os import chdir
 from paramiko import SSHClient, AutoAddPolicy
-from os.path import exists, join as join_path
+from os.path import exists, join as join_path, realpath, dirname
 from shutil import rmtree
 from os import remove
 from run_check import execute_mysql_query_on_server, execute_mysql_select
@@ -32,11 +30,16 @@ def establish_ssh_connection(server_ip, server_username, server_password=None, r
 
 def main(args):
     global client
+    if getattr(sys, 'frozen', False):
+        app_path = dirname(sys.executable)
+    else:
+        app_path = realpath(__file__)
+    chdir(app_path)
     if len(args) == 0:
         filename = default_file
     else:
         filename = args[0]
-    if not path.exists(filename):
+    if not exists(filename):
         print('file {} not found'.format(filename))
         return
     config = dotenv_values('.env')
@@ -75,4 +78,4 @@ def main(args):
         remove(data_file)
 
 if __name__ == '__main__':
-    main(argv[1:])
+    main(sys.argv[1:])

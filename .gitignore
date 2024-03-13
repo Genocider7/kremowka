@@ -6,6 +6,8 @@
 **.sql
 **.diff
 **.exe
+**.spec
+**.temp
 !meme_judging/no_image.jpg
 !dictionaries/template.dict
 help.txt
@@ -19,3 +21,6 @@ status_dictionary
 meme_judging/data.json
 meme_judging/suspended_data.json
 __pycache__
+local_*
+meme_judging/local_*
+meme_judging/build

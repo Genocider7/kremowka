@@ -8,3 +8,4 @@ python-dotenv==1.0.1
 pytz==2023.3
 requests==2.31.0
 validators==0.22.0
+pyinstaller==6.1.0
