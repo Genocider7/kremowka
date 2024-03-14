@@ -1,9 +1,9 @@
-from warnings import filterwarnings
-filterwarnings('ignore') #paramiko gives a warning for python 3.6
+import sys
 from paramiko import SSHClient, AutoAddPolicy
 from dotenv import dotenv_values
 from json import dumps
-from os import path, mkdir
+from os import mkdir, chdir
+from os.path import join as path_join, isdir, dirname, realpath
 from shutil import rmtree
 from webbrowser import open as web_open
 from run_check import execute_mysql_select
@@ -28,12 +28,17 @@ def establish_ssh_connection(server_ip, server_username, server_password=None, r
 def main():
     global client
     global config
+    if getattr(sys, 'frozen', False):
+        app_path = dirname(sys.executable)
+    else:
+        app_path = realpath(__file__)
+    chdir(app_path)
     client = SSHClient()
     config = dotenv_values('.env')
-    memes_dir = path.join(config['project_dir'], 'memes')
+    memes_dir = path_join(config['project_dir'], 'memes')
     client.set_missing_host_key_policy(AutoAddPolicy)
     establish_ssh_connection(config['server_ip'], config['server_user'], config['user_password'], config['rsa_key_directory'], config['rsa_key_passcode'])
-    if path.isdir(temp_dir):
+    if isdir(temp_dir):
         rmtree(temp_dir)
     mkdir(temp_dir)
     query_fields = {
@@ -63,8 +68,8 @@ def main():
     records = execute_mysql_select(client, query, config['mysql_database'], config['mysql_username'], config['mysql_password'])
     sftp = client.open_sftp()
     for record in records:
-        meme_dir = path.join(memes_dir, record['status'], record['filename']).replace('\\', '/')
-        target_path = path.join(temp_dir, record['filename'])
+        meme_dir = path_join(memes_dir, record['status'], record['filename']).replace('\\', '/')
+        target_path = path_join(temp_dir, record['filename'])
         print('Getting file {}...'.format(record['filename']), end='\t')
         sftp.get(meme_dir, target_path)
         print('OK')
