@@ -12,8 +12,8 @@ ECHO 	OK
 ECHO | SET /p="Moving and removing files and directories..."
 DEL %temp_file%
 MOVE dist\* .
-IF EXIST dist RMDIR dist
-IF EXIST build RMDIR build
+IF EXIST dist RMDIR /S /Q dist
+IF EXIST build RMDIR /S /Q build
 if EXIST %name%.spec DEL %name%.spec
 ECHO 	OK
 GOTO END
