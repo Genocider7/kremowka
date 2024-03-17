@@ -6,6 +6,7 @@ from os import chdir, rename as move
 from os.path import dirname, realpath
 from dotenv import dotenv_values
 from pathlib import Path
+from json import loads as json_loads
 
 approved = 'memes/approved/'
 ready = 'memes/ready/'
@@ -33,11 +34,11 @@ def main():
         params = {
             'key': config['api_key'],
             'action': 'upload',
-            'source': image_string,
+            'images': image_string,
             'format': 'txt'
         }
         response = req_post(config['image_host'], data=params)
-        url = response.text
+        url = json_loads(response.text)['data']['image']['url']
         move(approved + filename, ready + filename)
         db_cursor.execute('UPDATE images SET status=\'ready\', url=\'' + url + '\' WHERE id=' + str(id))
         print(filename + ' succesfully uploaded. url: ' + url)

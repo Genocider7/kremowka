@@ -1,21 +1,3 @@
-# from requests import post as req_post
-# from base64 import b64encode
-
-# api_key = '6d207e02198a847aa98d0a2a901485a5'
-# filename = 'file.jpg'
-# url = 'https://freeimage.host/api/1/upload'
-
-# with open(filename, 'rb') as image_file:
-#     image_string = b64encode(image_file.read())
-# params = {
-#     'key': api_key,
-#     'action': 'upload',
-#     'source': image_string,
-#     'format': 'txt'
-# }
-# response = req_post(url, data = params)
-# print(response.text)
-
 from os import chdir, listdir
 from os.path import dirname, realpath, join as path_join, basename as get_basename
 from dotenv import dotenv_values
