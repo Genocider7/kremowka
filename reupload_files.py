@@ -22,6 +22,7 @@ from dotenv import dotenv_values
 from mysql.connector import connect as connect_mysql
 from requests import post as req_post
 from base64 import b64encode
+from json import loads as json_loads
 
 def main():
     chdir(dirname(realpath(__file__)))
@@ -35,7 +36,6 @@ def main():
     db_cursor = db_handler.cursor()
     memes_directory = path_join('memes', 'ready')
     memes_filenames = [path_join(memes_directory, file) for file in listdir(memes_directory) if file.endswith('.png') or file.endswith('.jpg')]
-    update_list = {}
     for meme in memes_filenames:
         extension = meme[-3:]
         basename = get_basename(meme)[:-4]
@@ -45,11 +45,11 @@ def main():
         params = {
             'key': config['api_key'],
             'action': 'upload',
-            'source': image_string,
+            'image': image_string,
             'format': 'txt'
         }
         response = req_post(config['image_host'], data=params)
-        url = response.text
+        url = json_loads(response.text)['data']['image']['url']
         db_cursor.execute('UPDATE images SET url=\"{}\" WHERE basename=\"{}\" AND extension=\"{}\"'.format(url, basename, extension))
         print(url)
 
