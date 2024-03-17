@@ -88,7 +88,7 @@ def get_random_image():
 def get_image_embed(image):
     global pope_embed
     (url, author) = image
-    pope_embed = Embed()
+    pope_embed = Embed(description=dictionary['embed_description'].format(url=url))
     pope_embed.set_image(url=url)
     pope_embed.set_footer(text=dictionary['embed_footer'].format(author_name=author))
 
