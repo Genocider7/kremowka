@@ -32,6 +32,7 @@ def main():
             parent_list.append({'id': config['parent_drive']})
         drive_file = drive_handler.CreateFile({'parents': parent_list})
         drive_file.SetContentFile(meme)
+        drive_file['title'] = basename
         drive_file.Upload()
         url = config['new_file_url'].format(id=drive_file.metadata['id'])
         db_cursor.execute('UPDATE images SET url=\"{}\" WHERE basename=\"{}\" AND extension=\"{}\"'.format(url, basename, extension))

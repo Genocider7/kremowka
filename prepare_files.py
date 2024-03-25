@@ -32,6 +32,7 @@ def main():
     files = db_cursor.fetchall()
     for (id, filename) in files:
         meme_path = join_path(approved, filename)
+        basename = filename[:-4]
         if not meme_path.is_file():
             print(filename + ' not found', file=stderr)
             continue
@@ -40,6 +41,7 @@ def main():
             parent_list.append({'id': config['parent_drive']})
         drive_file = drive_handler.CreateFile({'parents': parent_list})
         drive_file.SetContentFile(meme_path)
+        drive_file['title'] = basename
         drive_file.Upload()
         url = config['new_file_url'].format(id=drive_file.metadata['id'])
         move(approved + filename, ready + filename)
