@@ -1,0 +1,15 @@
+#fill out client config and copy this file. Rename the copy to settings.yaml
+
+client_config_backend: settings
+client_config:
+  client_id: 1032491920866-ngvoqucbm651kiib08ft290m3ph3m740.apps.googleusercontent.com
+  client_secret: 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
+
+save_credentials: True
+save_credentials_backend: file
+save_credentials_file: credentials.json
+
+get_refresh_token: True
+
+oauth_scope: 
+- https://www.googleapis.com/auth/drive.file

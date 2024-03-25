@@ -1,15 +1,20 @@
-from requests import post as req_post
-from base64 import b64encode
 from mysql.connector import connect as connect_mysql
 from sys import stderr
 from os import chdir, rename as move
-from os.path import dirname, realpath
+from os.path import dirname, realpath, join as join_path
 from dotenv import dotenv_values
-from pathlib import Path
-from json import loads as json_loads
+from pydrive.auth import GoogleAuth
+from pydrive.drive import GoogleDrive
 
-approved = 'memes/approved/'
-ready = 'memes/ready/'
+memes_dir = 'memes'
+approved = 'approved'
+ready = 'ready'
+
+approved = join_path(memes_dir, approved)
+ready = join_path(memes_dir, ready)
+
+def connect_gdrive():
+    return GoogleDrive(GoogleAuth())
 
 def main():
     global config
@@ -22,23 +27,21 @@ def main():
         database=config['database']
     )
     db_cursor = db_handler.cursor()
+    drive_handler = connect_gdrive()
     db_cursor.execute('SELECT images.id AS id, CONCAT(images.basename, \'.\', images.extension) AS name FROM images WHERE images.status=\'approved\'')
     files = db_cursor.fetchall()
     for (id, filename) in files:
-        path = Path(approved + filename)
-        if not path.is_file():
+        meme_path = join_path(approved, filename)
+        if not meme_path.is_file():
             print(filename + ' not found', file=stderr)
             continue
-        with open(approved + filename, 'rb') as image_file:
-            image_string = b64encode(image_file.read())
-        params = {
-            'key': config['api_key'],
-            'action': 'upload',
-            'images': image_string,
-            'format': 'txt'
-        }
-        response = req_post(config['image_host'], data=params)
-        url = json_loads(response.text)['data']['image']['url']
+        parent_list = []
+        if config['parent_drive'] != '':
+            parent_list.append({'id': config['parent_drive']})
+        drive_file = drive_handler.CreateFile({'parents': parent_list})
+        drive_file.SetContentFile(meme_path)
+        drive_file.Upload()
+        url = config['new_file_url'].format(id=drive_file.metadata['id'])
         move(approved + filename, ready + filename)
         db_cursor.execute('UPDATE images SET status=\'ready\', url=\'' + url + '\' WHERE id=' + str(id))
         print(filename + ' succesfully uploaded. url: ' + url)

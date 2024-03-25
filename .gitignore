@@ -24,3 +24,5 @@ __pycache__
 local_*
 meme_judging/local_*
 meme_judging/build
+credentials.json
+settings.yaml
