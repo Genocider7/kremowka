@@ -37,6 +37,7 @@ def main():
         url = config['new_file_url'].format(id=drive_file.metadata['id'])
         db_cursor.execute('UPDATE images SET url=\"{}\" WHERE basename=\"{}\" AND extension=\"{}\"'.format(url, basename, extension))
         print(url)
+    db_handler.commit()
 
 if __name__ == '__main__':
     main()
