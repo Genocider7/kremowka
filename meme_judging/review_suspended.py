@@ -68,7 +68,7 @@ def main():
     records = execute_mysql_select(client, query, config['mysql_database'], config['mysql_username'], config['mysql_password'])
     sftp = client.open_sftp()
     for record in records:
-        meme_dir = path_join(memes_dir, record['status'], record['filename']).replace('\\', '/')
+        meme_dir = path_join(memes_dir, record['filename']).replace('\\', '/')
         target_path = path_join(temp_dir, record['filename'])
         print('Getting file {}...'.format(record['filename']), end='\t')
         sftp.get(meme_dir, target_path)

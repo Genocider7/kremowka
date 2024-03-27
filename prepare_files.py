@@ -1,17 +1,12 @@
 from mysql.connector import connect as connect_mysql
 from sys import stderr
-from os import chdir, rename as move
-from os.path import dirname, realpath, join as join_path
+from os import chdir
+from os.path import dirname, realpath, join as join_path, exists as is_file
 from dotenv import dotenv_values
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 
 memes_dir = 'memes'
-approved = 'approved'
-ready = 'ready'
-
-approved = join_path(memes_dir, approved)
-ready = join_path(memes_dir, ready)
 
 def connect_gdrive():
     return GoogleDrive(GoogleAuth())
@@ -31,9 +26,9 @@ def main():
     db_cursor.execute('SELECT images.id AS id, CONCAT(images.basename, \'.\', images.extension) AS name FROM images WHERE images.status=\'approved\'')
     files = db_cursor.fetchall()
     for (id, filename) in files:
-        meme_path = join_path(approved, filename)
+        meme_path = join_path(memes_dir, filename)
         basename = filename[:-4]
-        if not meme_path.is_file():
+        if not is_file(meme_path):
             print(filename + ' not found', file=stderr)
             continue
         parent_list = []
@@ -44,7 +39,6 @@ def main():
         drive_file['title'] = basename
         drive_file.Upload()
         url = config['new_file_url'].format(id=drive_file.metadata['id'])
-        move(approved + filename, ready + filename)
         db_cursor.execute('UPDATE images SET status=\'ready\', url=\'' + url + '\' WHERE id=' + str(id))
         print(filename + ' succesfully uploaded. url: ' + url)
     db_handler.commit()

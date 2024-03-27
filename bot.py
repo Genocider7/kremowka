@@ -161,7 +161,7 @@ def configure_channel(channel_id, server_id):
 async def receive_file(url, author_name, author_id, where_to_send):
     extension = url.split('?')[0][-3:]
     basename = md5((str(author_id) + str(datetime.now())).encode()).hexdigest()
-    with open(config['save_directory'] + basename + '.' + extension, 'wb') as file:
+    with open(path_join(config['save_directory'], basename + '.' + extension), 'wb') as file:
         file.write(request_get(url).content)
     db_cursor.execute('INSERT INTO images (basename, extension, submitted_by, submitted_by_id) VALUES (\"' + basename + '\", \"' + extension + '\", \"' + author_name + '\", \"' + str(author_id) + '\")')
     db_handler.commit()

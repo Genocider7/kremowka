@@ -12,7 +12,7 @@ temp_dir = 'temp'
 
 def execute_mysql_query_on_server(ssh_connection, query, mysql_database, mysql_username, mysql_password):
     query = query.replace('\"', '\\\"').replace('`', '\\`')
-    return ssh_connection.exec_command('mysql {} -u{} -p{} -e\"{}\"'.format(mysql_database, mysql_username, mysql_password, query))
+    return ssh_connection.exec_command('mysql {} -u\"{}\" -p\"{}\" -e\"{}\"'.format(mysql_database, mysql_username, mysql_password, query))
 
 def execute_mysql_select(ssh_connection, query, mysql_database, mysql_username, mysql_password):
     (_, stdout, _) = execute_mysql_query_on_server(ssh_connection, query, mysql_database, mysql_username, mysql_password)
@@ -46,13 +46,13 @@ def main():
     global client
     global memes_dir
     if getattr(sys, 'frozen', False):
-        app_path = dirname(sys.executable)
+        app_path = sys.executable
     else:
         app_path = realpath(__file__)
-    chdir(app_path)
+    chdir(dirname(app_path))
     client = SSHClient()
     config = dotenv_values('.env')
-    memes_dir = path_join(config['project_dir'], 'memes', 'checked')
+    memes_dir = path_join(config['project_dir'], 'memes')
     client.set_missing_host_key_policy(AutoAddPolicy)
     establish_ssh_connection(config['server_ip'], config['server_user'], config['user_password'], config['rsa_key_directory'], config['rsa_key_passcode'])
     if isdir(temp_dir):

@@ -1,1 +1,0 @@
-Here are memes permanently banned by admin, possibly to delete later

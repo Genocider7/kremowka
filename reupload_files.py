@@ -1,5 +1,5 @@
-from os import chdir, listdir
-from os.path import dirname, realpath, join as path_join, basename as get_basename
+from os import chdir
+from os.path import dirname, realpath, join as path_join
 from dotenv import dotenv_values
 from mysql.connector import connect as connect_mysql
 from pydrive.auth import GoogleAuth
@@ -20,11 +20,15 @@ def main():
     )
     db_cursor = db_handler.cursor()
     drive_handler = connect_gdrive()
-    memes_directory = path_join('memes', 'ready')
-    memes_filenames = [path_join(memes_directory, file) for file in listdir(memes_directory) if file.endswith('.png') or file.endswith('.jpg')]
-    for meme in memes_filenames:
-        extension = meme[-3:]
-        basename = get_basename(meme)[:-4]
+    memes_directory = 'memes'
+    db_cursor.execute('SELECT images.id AS id, images.basename as basename, images.extension AS extension FROM images')
+    db_ready_files = {}
+    for entry in db_cursor.fetchall():
+        db_ready_files[entry[0]] = (entry[1], entry[2])
+    for meme_id, filename in db_ready_files.items():
+        basename = filename[0]
+        extension = filename[1]
+        meme = path_join(memes_directory, basename + '.' + extension)
         print('{}...'.format(meme), end='\t')
         stdout.flush()
         parent_list = []
@@ -35,7 +39,7 @@ def main():
         drive_file['title'] = basename
         drive_file.Upload()
         url = config['new_file_url'].format(id=drive_file.metadata['id'])
-        db_cursor.execute('UPDATE images SET url=\"{}\" WHERE basename=\"{}\" AND extension=\"{}\"'.format(url, basename, extension))
+        db_cursor.execute('UPDATE images SET url=\"{}\" WHERE id={}'.format(url, meme_id))
         print(url)
     db_handler.commit()
 

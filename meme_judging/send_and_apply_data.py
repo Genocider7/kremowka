@@ -2,19 +2,15 @@ import sys
 from dotenv import dotenv_values
 from os import chdir
 from paramiko import SSHClient, AutoAddPolicy
-from os.path import exists, join as join_path, realpath, dirname
+from os.path import exists, realpath, dirname
 from shutil import rmtree
 from os import remove
-from run_check import execute_mysql_query_on_server, execute_mysql_select
+from run_check import execute_mysql_query_on_server
 
 default_file = 'data_to_send.env'
 temp_dir = 'temp'
 sus_temp_dir = 'sus_temp'
 data_file = 'data.json'
-
-def unix_join(*args):
-    temp = join_path(*args)
-    return temp.replace('\\', '/')
 
 def establish_ssh_connection(server_ip, server_username, server_password=None, rsa_key_location=None, rsa_key_password=None):
     global client
@@ -31,10 +27,10 @@ def establish_ssh_connection(server_ip, server_username, server_password=None, r
 def main(args):
     global client
     if getattr(sys, 'frozen', False):
-        app_path = dirname(sys.executable)
+        app_path = sys.executable
     else:
         app_path = realpath(__file__)
-    chdir(app_path)
+    chdir(dirname(app_path))
     if len(args) == 0:
         filename = default_file
     else:
@@ -53,18 +49,6 @@ def main(args):
     query = 'UPDATE images SET status=\"{}\" WHERE id={}'
     for key, value in images_status.items():
         sub_query = query.format(value, key)
-        select_query = 'SELECT CONCAT(images.basename, \".\", images.extension) AS filename, images.status AS status FROM images WHERE id={}'.format(key)
-        ret = execute_mysql_select(client, select_query, config['mysql_database'], config['mysql_username'], config['mysql_password'])
-        if len(ret) == 0:
-            print('Error, no image with id={} found'.format(key))
-            return
-        image_file = ret[0]['filename']
-        image_status = ret[0]['status']
-        current_location = unix_join(config['project_dir'], 'memes', image_status, image_file)
-        target_location = unix_join(config['project_dir'], 'memes', value, image_file)
-        current_location = current_location.replace(' ', '\\ ')
-        target_location = target_location.replace(' ', '\\ ')
-        client.exec_command('mv {} {}'.format(current_location, target_location))
         execute_mysql_query_on_server(client, sub_query, config['mysql_database'], config['mysql_username'], config['mysql_password'])
         print(sub_query)
     client.close()

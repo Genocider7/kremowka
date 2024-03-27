@@ -2,7 +2,7 @@ from mysql.connector import connect as connect_mysql
 from dotenv import dotenv_values
 from imagehash import average_hash
 from PIL import Image
-from os import rename as move, chdir
+from os import chdir
 from os.path import dirname, realpath, join as path_join, exists as file_exists
 
 memes_directory = 'memes'
@@ -33,14 +33,14 @@ def get_all_waiting():
     raw_ret = db_cursor.fetchall()
     ret = {}
     for record in raw_ret:
-        if not file_exists(path_join(memes_directory, 'waiting', record[0])):
+        if not file_exists(path_join(memes_directory, record[0])):
             remove_from_database(record[1])
             continue
         ret[record[1]] = record[0]
     return ret
 
 def get_all_others():
-    query = 'SELECT CONCAT(images.basename, \".\", images.extension) AS filename, images.status AS directory, images.id AS id FROM images WHERE images.status IN (NULL'
+    query = 'SELECT CONCAT(images.basename, \".\", images.extension) AS filename, images.id AS id FROM images WHERE images.status IN (NULL'
     for key in where_duplicates.keys():
         if not where_duplicates[key]:
             continue
@@ -50,11 +50,11 @@ def get_all_others():
     raw_ret = db_cursor.fetchall()
     ret = {}
     for record in raw_ret:
-        meme_path = path_join(memes_directory, record[1], record[0])
+        meme_path = path_join(memes_directory, record[0])
         if not file_exists(meme_path):
-            remove_from_database(record[2])
+            remove_from_database(record[1])
             continue
-        ret[record[2]] = path_join(memes_directory, record[1], record[0])
+        ret[record[1]] = path_join(memes_directory, record[0])
     return ret
 
 def remove_from_database(key_id):
@@ -79,7 +79,7 @@ def main():
     hashes = load_hashes(other_memes)
     duplicates = {}
     for id in waiting.keys():
-        filepath = path_join(memes_directory, 'waiting', waiting[id])
+        filepath = path_join(memes_directory, waiting[id])
         with Image.open(filepath) as waiting_image:
             waiting_hash = average_hash(waiting_image, 16)
         check = True
@@ -95,9 +95,8 @@ def main():
         query = 'UPDATE images SET status=\"{target}\" WHERE id={id}'.format(target=target, id=id)
         db_cursor.execute(query)
         db_handler.commit()
-        move(filepath, path_join(memes_directory, target, waiting[id]))
         hashes[id] = waiting_hash
-        
+
     for key, value in duplicates.items():
         query = 'INSERT INTO duplicates (checked_image, duplicate) VALUES ({checked_image}, {duplicate})'.format(checked_image=key, duplicate=value)
         db_cursor.execute(query)
