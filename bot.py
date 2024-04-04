@@ -18,7 +18,6 @@ from os import rename as move, mkdir
 from os.path import exists as path_exists, join as path_join
 
 intents = Intents.default()
-intents.message_content = True
 client = Client(intents=intents)
 command_tree = CommandTree(client)
 
@@ -31,7 +30,7 @@ config['time_offset'] = int(config['time_offset'])
 config['testing_server'] = disc_object(id=int(config['testing_server']))
 dictionary = dotenv_values(config['dictionary'])
 statuses = dotenv_values(config['statuses'])
-environment_guilds = []
+environment_guilds = [config['testing_server']]
 
 def set_logger():
     global logger
@@ -127,7 +126,7 @@ async def send_pope_memes():
             guild = await client.fetch_guild(server)
             owner = await client.fetch_user(guild.owner_id)
             try:
-                await owner.send(dictionary['channel_not_found'].format(guild_name=guild.name, prefix=config['prefix']))
+                await owner.send(dictionary['channel_not_found'].format(guild_name=guild.name))
                 result_code = 2
             except:
                 result_code = 34
@@ -149,7 +148,7 @@ async def stop_receiving_memes():
 async def start_receiving_memes():
     global memes_ok 
     memes_ok = True
-    game = Game('{}help'.format(config['prefix']))
+    game = Game('/help')
     await client.change_presence(activity = game)
 
 def configure_channel(channel_id: str|int, server_id: str|int):
@@ -207,7 +206,7 @@ async def config_channel_command(context: Interaction, channel_handle: TextChann
     if configure_channel(channel_handle.id, context.guild_id):
         await context.response.send_message(dictionary['configure_channel_success'])
     else:
-        await context.response.send_message(dictionary['configure_channel_error'], ephemeral=True)
+        await context.response.send_message(dictionary['configure_channel_error'].format(channel=channel_handle.mention), ephemeral=True)
 
 @command_tree.command(
     name='help',
@@ -238,7 +237,7 @@ async def check_command(context: Interaction, meme_id: int):
     db_cursor.execute(query)
     result = db_cursor.fetchone()
     if not result:
-        await context.response.send_message(dictionary['wrong_config'], ephemeral=True)
+        await context.response.send_message(dictionary['wrong_id'], ephemeral=True)
         return
     await context.response.send_message(dictionary['status_report'].format(status=statuses[result[0]], meme_id=meme_id, author=result[1]), ephemeral=True)
 
@@ -290,7 +289,7 @@ async def on_ready():
     log('Connected to discord servers!')
     log('logged in as ' + client.user.name)
     log('id ' + str(client.user.id))
-    activity = Game('{prefix}help'.format(prefix=config['prefix']))
+    activity = Game('/help')
     await client.change_presence(activity=activity)
     scheduler = AsyncIOScheduler(timezone='Europe/Warsaw')
     scheduler.add_job(stop_receiving_memes, CronTrigger(hour=correct_hour(21), minute=34))
@@ -380,78 +379,6 @@ async def on_message(message: Message):
                 return
             await receive_file(message.content, message.author.display_name, message.author.id, message.channel)
             return
-
-        if not message.content.startswith(config['prefix']):
-            return
-        content = message.content[len(config['prefix']):]
-
-        if content.lower() == 'config' or content.lower().startswith('config '):
-            if type(message.channel) == TextChannel:
-                if message.guild.owner_id == message.author.id:
-                    perms_ok = True
-                elif message.author.guild_permissions.administrator or message.author.guild_permissions.manage_channels:
-                    perms_ok = True
-                else:
-                    perms_ok = False
-                if perms_ok:
-                    words = content.split(' ', 1)
-                    if len(words) <= 1:
-                        await message.channel.send(dictionary['wrong_config'].format(prefix=config['prefix']))
-                        return
-                    channel_id = check_for_channel_id(words[1])
-                    if channel_id == False:
-                        await message.channel.send(dictionary['no_channel_found'])
-                        return
-                    success = configure_channel(channel_id, message.guild.id)
-                    if not success:
-                        await message.channel.send(dictionary['configure_channel_error'])
-                        return
-                    await message.channel.send(dictionary['configure_channel_success'])
-                    return
-                else:
-                    await message.channel.send(dictionary['no_permission_config'])
-                    return
-            else:
-                await message.channel.send(dictionary['DM_config'])
-                return
-
-        if content.lower() == 'check' or content.lower().startswith('check '):
-            words = content.split(' ', 1)
-            if len(words) <= 1:
-                await message.channel.send(dictionary['wrong_check'].format(prefix=config['prefix']))
-                return
-            if not words[1].isdigit():
-                await message.channel.send(dictionary['wrong_id'])
-                return
-            query = 'SELECT images.status, images.submitted_by FROM images WHERE images.id={0}'.format(words[1])
-            db_cursor.execute(query)
-            result = db_cursor.fetchone()
-            if not result:
-                await message.channel.send(dictionary['wrong_id'])
-                return
-            await message.channel.send(dictionary['status_report'].format(status=statuses[result[0]], meme_id=words[1], author=result[1]))
-            return
-
-        if content.lower().startswith('help'):
-            await message.channel.send(help_str.format(prefix=config['prefix']))
-            return
-        
-        if content.lower().startswith('about'):
-            await message.channel.send(about_str)
-            return
-
-        # only for admin
-        if message.author.id == config['admin_id']:
-            if content == 'off':
-                log('Turning off bot')
-                await client.close()
-            if content == 'meme':
-                await prepare_embed()
-                await message.channel.send(embed=pope_embed)
-            if content == '2137':
-                await prepare_embed()
-                await send_pope_memes()
-
     except Exception as e:
         tb = exception_traceback()
         lines = tb.split('\n')
