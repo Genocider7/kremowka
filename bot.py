@@ -1,5 +1,5 @@
 import logging
-from discord import Intents, Client, Embed, Game, Status, DMChannel, TextChannel
+from discord import Intents, Client, Embed, Game, Status, DMChannel, TextChannel, User as disc_user, Message
 from discord.errors import Forbidden as disc_Forbidden, NotFound as disc_not_found
 from requests import get as request_get
 from mysql.connector import connect as connect_mysql
@@ -33,11 +33,11 @@ def set_logger():
     log_handler.setFormatter(formatter)
     logger.addHandler(log_handler)
 
-def log(message):
+def log(message: str):
     logger.log(msg = message, level = logger.level)
     print(message)
 
-def connect_db(main_connect = True):
+def connect_db(main_connect: bool = True):
     global db_handler
     global db_cursor
     db_handler = connect_mysql(
@@ -62,7 +62,7 @@ def get_channels_from_db():
         channel = client.get_channel(int(channel_id))
         channels[guild] = channel
 
-def check_for_channel_id(channel_string):
+def check_for_channel_id(channel_string: str):
     channel_string = channel_string.strip()
     if len(channel_string) > 22:
         return False
@@ -85,7 +85,7 @@ def get_random_image():
     db_handler.commit()
     return (pick[1], pick[2])
 
-def get_image_embed(image):
+def get_image_embed(image: tuple[str, str]):
     global pope_embed
     (url, author) = image
     pope_embed = Embed(description=dictionary['embed_description'].format(url=url))
@@ -142,7 +142,7 @@ async def start_receiving_memes():
     game = Game('{}help'.format(config['prefix']))
     await client.change_presence(activity = game)
 
-def configure_channel(channel_id, server_id):
+def configure_channel(channel_id: str|int, server_id: str|int):
     global channels
     channel_id = str(channel_id)
     server_id = str(server_id)
@@ -158,7 +158,7 @@ def configure_channel(channel_id, server_id):
     db_handler.commit()
     return True
 
-async def receive_file(url, author_name, author_id, where_to_send):
+async def receive_file(url: str, author_name: str, author_id: int, where_to_send: DMChannel|disc_user):
     extension = url.split('?')[0][-3:]
     basename = md5((str(author_id) + str(datetime.now())).encode()).hexdigest()
     with open(path_join(config['save_directory'], basename + '.' + extension), 'wb') as file:
@@ -171,7 +171,7 @@ async def receive_file(url, author_name, author_id, where_to_send):
     await where_to_send.send(dictionary['meme_sent'].format(meme_id=id))
     add_user_timeout(author_id)
 
-def correct_hour(hour):
+def correct_hour(hour: int):
     hour -= config['time_offset']
     while hour < 0:
         hour += 24
@@ -215,17 +215,17 @@ def split_log_file():
     logger.addHandler(log_handler)
     logger.log(msg = '---Start of log---', level = logger.level)
 
-def add_user_timeout(user_id):
+def add_user_timeout(user_id: int):
     global timeout_users
     global scheduler
     timeout_users.append(user_id)
     scheduler.add_job(remove_user_timeout, 'date', run_date=datetime.now(tz=timezone('Europe/Warsaw')) + timedelta(seconds=30), args=[user_id])
 
-def remove_user_timeout(user_id):
+def remove_user_timeout(user_id: int):
     global timeout_users
     timeout_users.remove(user_id)
 
-def remove_server_channel(server_id):
+def remove_server_channel(server_id: str):
     global channels
     channels.pop(server_id)
     db_cursor.execute('DELETE FROM channels WHERE guild_id=\"{}\"'.format(server_id))
@@ -245,7 +245,7 @@ async def check_channels():
         remove_server_channel(server)
 
 @client.event
-async def on_message(message):
+async def on_message(message: Message):
     if message.author == client.user:
         return
     try:
