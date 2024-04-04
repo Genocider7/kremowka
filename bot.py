@@ -1,6 +1,8 @@
 import logging
-from discord import Intents, Client, Embed, Game, Status, DMChannel, TextChannel, User as disc_user, Message
+from discord import Intents, Client, Embed, Game, Status, DMChannel, TextChannel, User as disc_user, Message, Object as disc_object, Interaction
 from discord.errors import Forbidden as disc_Forbidden, NotFound as disc_not_found
+from discord.app_commands import CommandTree, describe as command_describe, guild_only as command_guild_only, default_permissions as command_default_permissions, check as command_check
+from discord.app_commands.checks import has_permissions as command_has_permissions
 from requests import get as request_get
 from mysql.connector import connect as connect_mysql
 from validators import url as validate_url
@@ -16,12 +18,20 @@ from os import rename as move, mkdir
 from os.path import exists as path_exists, join as path_join
 
 intents = Intents.default()
-intents.guilds = True
 intents.message_content = True
 client = Client(intents=intents)
+command_tree = CommandTree(client)
+
 pope_embed = None
 channels = {}
 logger = None
+config = dotenv_values('.env')
+config['admin_id'] = int(config['admin_id'])
+config['time_offset'] = int(config['time_offset'])
+config['testing_server'] = disc_object(id=int(config['testing_server']))
+dictionary = dotenv_values(config['dictionary'])
+statuses = dotenv_values(config['statuses'])
+environment_guilds = []
 
 def set_logger():
     global logger
@@ -179,11 +189,103 @@ def correct_hour(hour: int):
         hour -= 24
     return hour
 
+def is_owner():
+    def predicate(context: Interaction):
+        return context.user.id == config['admin_id']
+    return command_check(predicate)
+
+@command_tree.command(
+    name='channel',
+    description=dictionary['channel_command'],
+    guilds=environment_guilds
+)
+@command_describe(channel_handle=dictionary['channel_handle_option'])
+@command_guild_only()
+@command_default_permissions(manage_channels=True)
+@command_has_permissions(manage_channels=True)
+async def config_channel_command(context: Interaction, channel_handle: TextChannel):
+    if configure_channel(channel_handle.id, context.guild_id):
+        await context.response.send_message(dictionary['configure_channel_success'])
+    else:
+        await context.response.send_message(dictionary['configure_channel_error'], ephemeral=True)
+
+@command_tree.command(
+    name='help',
+    description=dictionary['help_command'],
+    guilds=environment_guilds
+)
+@command_describe(show_everyone=dictionary['show_everyone_option'])
+async def help_command(context: Interaction, show_everyone: bool = False):
+    await context.response.send_message(help_str, ephemeral=not show_everyone)
+
+@command_tree.command(
+    name='about',
+    description=dictionary['about_command'],
+    guilds=environment_guilds
+)
+@command_describe(show_everyone=dictionary['show_everyone_option'])
+async def about_command(context: Interaction, show_everyone: bool = False):
+    await context.response.send_message(about_str, ephemeral=not show_everyone)
+
+@command_tree.command(
+    name='check',
+    description=dictionary['check_command'],
+    guilds=environment_guilds
+)
+@command_describe(meme_id=dictionary['meme_id_option'])
+async def check_command(context: Interaction, meme_id: int):
+    query = 'SELECT images.status, images.submitted_by FROM images WHERE images.id={0}'.format(meme_id)
+    db_cursor.execute(query)
+    result = db_cursor.fetchone()
+    if not result:
+        await context.response.send_message(dictionary['wrong_config'], ephemeral=True)
+        return
+    await context.response.send_message(dictionary['status_report'].format(status=statuses[result[0]], meme_id=meme_id, author=result[1]), ephemeral=True)
+
+### Admin only commands ###
+@command_tree.command(
+    name='meme',
+    description='sends a meme',
+    guild=config['testing_server']
+)
+@is_owner()
+async def meme_command(context: Interaction):
+    await prepare_embed()
+    await context.response.send_message(embed=pope_embed)
+
+@command_tree.command(
+    name='2137',
+    description='sends a meme to every server',
+    guild=config['testing_server']
+)
+@is_owner()
+async def meme_command(context: Interaction):
+    await prepare_embed()
+    await send_pope_memes()
+    await context.response.send_message('Done', ephemeral=True)
+
+@command_tree.command(
+    name='off',
+    description='turns off bot',
+    guild=config['testing_server']
+)
+@is_owner()
+async def meme_command(context: Interaction):
+    log('Turning off bot')
+    await context.response.send_message('Turning off bot...', ephemeral=True, delete_after=3)
+    await client.close()
+
 @client.event
 async def on_ready():
     global scheduler
     global timeout_users
     timeout_users = []
+    await command_tree.sync()
+    for guild in environment_guilds:
+        if guild==config['testing_server']:
+            continue
+        await command_tree.sync(guild=guild)
+    await command_tree.sync(guild=config['testing_server'])
     get_channels_from_db()
     log('Connected to discord servers!')
     log('logged in as ' + client.user.name)
@@ -360,17 +462,9 @@ async def on_message(message: Message):
         raise e
 
 def main():
-    global config
-    global dictionary
     global memes_ok
-    global statuses
     global help_str
     global about_str
-    config = dotenv_values('.env')
-    config['admin_id'] = int(config['admin_id'])
-    config['time_offset'] = int(config['time_offset'])
-    dictionary = dotenv_values(config['dictionary'])
-    statuses = dotenv_values(config['statuses'])
     with open(config['help_file'], 'r', encoding='utf8') as file:
         help_str = file.read()
     with open(config['about_file'], 'r', encoding='utf8') as file:
