@@ -30,7 +30,7 @@ config['time_offset'] = int(config['time_offset'])
 config['testing_server'] = disc_object(id=int(config['testing_server']))
 dictionary = dotenv_values(config['dictionary'])
 statuses = dotenv_values(config['statuses'])
-environment_guilds = []
+environment_guilds = [disc_object(518058574157578250)]
 
 def set_logger():
     global logger
@@ -233,7 +233,7 @@ async def about_command(context: Interaction, show_everyone: bool = False):
 )
 @command_describe(meme_id=dictionary['meme_id_option'])
 async def check_command(context: Interaction, meme_id: int):
-    query = 'SELECT CONCAT(images.basename, \".\", images.extension), images.status, images.submitted_by FROM images WHERE images.id={0}'.format(meme_id)
+    query = 'SELECT CONCAT(images.basename, \".\", images.extension), images.status, images.submitted_by, images.submitted_by_id FROM images WHERE images.id={0}'.format(meme_id)
     db_cursor.execute(query)
     result = db_cursor.fetchone()
     if not result:
@@ -241,18 +241,15 @@ async def check_command(context: Interaction, meme_id: int):
         return
     meme = disc_file(path_join('memes', result[0]))
     embed = Embed(title=dictionary['status_title'].format(meme_id = meme_id))
-    embed.set_author(name = context.user.display_name, icon_url=context.user.avatar.url)
+    try:
+        meme_author = await client.fetch_user(int(result[3]))
+        embed.set_author(name = meme_author.display_name, icon_url = meme_author.avatar.url)
+    except disc_not_found:
+        logger.warning('Failed to find user with id {}'.format(result[3]))
     embed.set_image(url = 'attachment://{}'.format(result[0]))
     embed.description = dictionary['status_report'].format(status=statuses[result[1]], meme_id=meme_id, author=result[2])
     await context.response.send_message(file = meme, embed = embed, ephemeral = True)
 
-@command_tree.command(
-    name='info',
-    description=dictionary['info_command'],
-    guilds=environment_guilds
-)
-async def info_command(context: Interaction):
-    query = 'SELECT images.id, images.status'
 ### Admin only commands ###
 @command_tree.command(
     name='meme',
