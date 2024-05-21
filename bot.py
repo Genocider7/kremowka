@@ -1,5 +1,5 @@
 import logging
-from discord import Intents, Client, Embed, Game, Status, DMChannel, TextChannel, User as disc_user, Message, Object as disc_object, Interaction
+from discord import Intents, Client, Embed, Game, Status, DMChannel, TextChannel, User as disc_user, Message, Object as disc_object, Interaction, File as disc_file
 from discord.errors import Forbidden as disc_Forbidden, NotFound as disc_not_found
 from discord.app_commands import CommandTree, describe as command_describe, guild_only as command_guild_only, default_permissions as command_default_permissions, check as command_check
 from discord.app_commands.checks import has_permissions as command_has_permissions
@@ -233,14 +233,26 @@ async def about_command(context: Interaction, show_everyone: bool = False):
 )
 @command_describe(meme_id=dictionary['meme_id_option'])
 async def check_command(context: Interaction, meme_id: int):
-    query = 'SELECT images.status, images.submitted_by FROM images WHERE images.id={0}'.format(meme_id)
+    query = 'SELECT CONCAT(images.basename, \".\", images.extension), images.status, images.submitted_by FROM images WHERE images.id={0}'.format(meme_id)
     db_cursor.execute(query)
     result = db_cursor.fetchone()
     if not result:
         await context.response.send_message(dictionary['wrong_id'], ephemeral=True)
         return
-    await context.response.send_message(dictionary['status_report'].format(status=statuses[result[0]], meme_id=meme_id, author=result[1]), ephemeral=True)
+    meme = disc_file(path_join('memes', result[0]))
+    embed = Embed(title=dictionary['status_title'].format(meme_id = meme_id))
+    embed.set_author(name = context.user.display_name, icon_url=context.user.avatar.url)
+    embed.set_image(url = 'attachment://{}'.format(result[0]))
+    embed.description = dictionary['status_report'].format(status=statuses[result[1]], meme_id=meme_id, author=result[2])
+    await context.response.send_message(file = meme, embed = embed, ephemeral = True)
 
+@command_tree.command(
+    name='info',
+    description=dictionary['info_command'],
+    guilds=environment_guilds
+)
+async def info_command(context: Interaction):
+    query = 'SELECT images.id, images.status'
 ### Admin only commands ###
 @command_tree.command(
     name='meme',
