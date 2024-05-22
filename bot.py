@@ -30,7 +30,7 @@ config['time_offset'] = int(config['time_offset'])
 config['testing_server'] = disc_object(id=int(config['testing_server']))
 dictionary = dotenv_values(config['dictionary'])
 statuses = dotenv_values(config['statuses'])
-environment_guilds = [disc_object(518058574157578250)]
+environment_guilds = []
 
 def set_logger():
     global logger
